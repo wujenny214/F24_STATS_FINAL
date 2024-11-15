@@ -1,43 +1,73 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Vignette Title}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+title: "Project Proposal"
+author: "ALL group member names here"
+subtitle: "Due November 17 at 11:59pm"
+format: pdf
 ---
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
+#### Load Packages
 
 ```{r load-packages, message = FALSE, warning = FALSE}
 library(tidyverse)
+library(dplyr)
 ```
+
 # Dataset 1 (top choice)
 
 **Data source:**
+County Health Rankings & Roadmaps (NC 2024 County Data: https://www.countyhealthrankings.org/health-data/north-carolina/data-and-resources)
 
 **Brief description:**
+This dataset contains health factor and health outcome data for each county in NC in 2024. It is provided as part of a program by the University of Wisconsin Population Health Institute () and combines data from other sources, such as the Behavioral Risk Factor Surveillance System & National Center for Health Statistics.
 
 **Research question 1:**
+What is the relationship between residential segregation (continuous variable) and juvenile arrests (continuous variable)? How is this relationship affected by the county's median household income (categorical variable, where 0=below national average, 1=above national average)?
 
--   Outcome variable (include the name/description and type of variable):
+Residential segregation = Index of dissimilarity where higher values indicate greater residential segregation between Black and white county residents (2018-2022 data).
+
+Juvenile arrests = Rate of delinquency cases per 1000 juveniles (2021 data).
+
+NY = 52
+TX = 254
+NC = 100
+MN = 87
+CO = 64
+WA = 39
+AL = 67
+
+
+
 
 **Research question 2:**
 
--   Outcome variable (include the name/description and type of variable):
+-   How does school segregation level (continuous predictor) relate to school funding adequacy (categorical outcome)?
+
+Qs:
+-Is it okay if the variables' data come from different years? 
+state in report and consider it a limitation
+-Is it better to combine multiple years of data for the same set of counties or include 5 different states' counties (but same year)?
+maybe look at year as interaction
+-Is it okay if original dataset only has numerical data and we turn some of the variables into categorical?
 
 **Load the data and provide a `glimpse()`**:
 
 ```{r data-1, warning=FALSE}
-
+texas_full <- read.csv('https://github.com/rrandev03/Practical-Data-Science/raw/refs/heads/main/Texas.csv', skip=1)
+#colnames(texas_full)
 ```
+
+```{r}
+texas <- texas_full[c('FIPS', 'State', 'County', "Segregation.Index", "Spending.per.Pupil", "School.Funding.Adequacy", "Segregation.Index.1", "Juvenile.Arrest.Rate")]
+head(texas)
+```
+```{r}
+texas <- texas |> 
+  rename(
+    Residential.Segregation.Index = Segregation.Index.1)
+
+head(texas)
+```
+
 
 **Exploratory Plots:**
 
@@ -104,9 +134,14 @@ library(tidyverse)
 # Team Charter
 
 #### When will you meet as a team to work on the project components? Will these meetings be held in person or virtually?
+We will meet virtually on Tuesday between 8 and 9 pm. 
+
 
 #### What is your group policy on missing team meetings (e.g., how much advance notice should be provided)?
+If a team member will be missing a meeting, they should provide around 10-12 hours of advance notice (the morning of).
 
 #### How will your team communicate (email, Slack, text messages)? What is your policy on appropriate response time (within a certain number of hours? Nights/weekends?)?
+We will be using WhatsApp primarily for communication, with Slack as our secondary chat. We will send Zoom invites via email to reserve our weekly meeting time (Tuesdays 8-9 pm). Ideally, team members should respond to or acknowledge messages within 1-3 hours on weekdays and 12 hours on weekends/during the night.
+
 
 #### 
