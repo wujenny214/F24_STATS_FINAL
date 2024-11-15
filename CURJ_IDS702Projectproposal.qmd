@@ -3,6 +3,9 @@ title: "Project Proposal"
 author: "ALL group member names here"
 subtitle: "Due November 17 at 11:59pm"
 format: pdf
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
 #### Load Packages
@@ -10,44 +13,45 @@ format: pdf
 ```{r load-packages, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(dplyr)
+library(ggplot2)
 ```
 
 # Dataset 1 (top choice)
 
-**Data source:**
-County Health Rankings & Roadmaps (NC 2024 County Data: https://www.countyhealthrankings.org/health-data/north-carolina/data-and-resources)
+**Data source:** County Health Rankings & Roadmaps (NC 2024 County Data:
+https://www.countyhealthrankings.org/health-data/north-carolina/data-and-resources)
 
-**Brief description:**
-This dataset contains health factor and health outcome data for each county in NC in 2024. It is provided as part of a program by the University of Wisconsin Population Health Institute () and combines data from other sources, such as the Behavioral Risk Factor Surveillance System & National Center for Health Statistics.
+**Brief description:** This dataset contains health factor and health
+outcome data for each county in NC in 2024. It is provided as part of a
+program by the University of Wisconsin Population Health Institute ()
+and combines data from other sources, such as the Behavioral Risk Factor
+Surveillance System & National Center for Health Statistics.
 
-**Research question 1:**
-What is the relationship between residential segregation (continuous variable) and juvenile arrests (continuous variable)? How is this relationship affected by the region of the US that the county / state is in (categorical variable called Region)?
+**Research question 1:** What is the relationship between residential
+segregation (continuous variable) and juvenile arrests (continuous
+variable)? How is this relationship affected by the region of the US
+that the county / state is in (categorical variable called Region)?
 
-Residential segregation = Index of dissimilarity where higher values indicate greater residential segregation between Black and white county residents (2018-2022 data).
+Residential segregation = Index of dissimilarity where higher values
+indicate greater residential segregation between Black and white county
+residents (2018-2022 data).
 
-Juvenile arrests = Rate of delinquency cases per 1000 juveniles (2021 data).
+Juvenile arrests = Rate of delinquency cases per 1000 juveniles (2021
+data).
 
-NY = 52
-TX = 254
-NC = 100
-MN = 87
-CO = 64
-WA = 39
-AL = 67
-
-
-
+NY = 52 TX = 254 NC = 100 MN = 87 CO = 64 WA = 39 AL = 67
 
 **Research question 2:**
 
--   How does school segregation level (continuous predictor) relate to school funding adequacy (categorical outcome)?
+-   How does school segregation level (continuous predictor) relate to
+    school funding adequacy (categorical outcome)?
 
-Qs:
--Is it okay if the variables' data come from different years? 
-state in report and consider it a limitation
--Is it better to combine multiple years of data for the same set of counties or include 5 different states' counties (but same year)?
-maybe look at year as interaction
--Is it okay if original dataset only has numerical data and we turn some of the variables into categorical?
+Qs: -Is it okay if the variables' data come from different years? state
+in report and consider it a limitation -Is it better to combine multiple
+years of data for the same set of counties or include 5 different
+states' counties (but same year)? maybe look at year as interaction -Is
+it okay if original dataset only has numerical data and we turn some of
+the variables into categorical?
 
 **Load the data and provide a `glimpse()`**:
 
@@ -62,13 +66,12 @@ minnesota_full <-  read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/r
 #colnames(texas_full)
 ```
 
-```{r}
-head(alabama_full)
-```
-
 
 ```{r}
-desired_cols <- c('FIPS', 'State', 'County', "Segregation.Index", "Spending.per.Pupil", "School.Funding.Adequacy", "Segregation.Index.1", "Juvenile.Arrest.Rate")
+desired_cols <- c('FIPS', 'State', 'County', 
+"Segregation.Index",
+"Spending.per.Pupil", "School.Funding.Adequacy", 
+"Segregation.Index.1", "Juvenile.Arrest.Rate")
 
 alabama <- alabama_full[desired_cols]
 texas <- texas_full[desired_cols]
@@ -116,18 +119,19 @@ minnesota <- minnesota |>
     School.Segregation.Index = Segregation.Index,
     Residential.Segregation.Index = Segregation.Index.1)
 
-head(minnesota)
+#head(minnesota)
 ```
 
 ```{r}
-all_states <- rbind(alabama, texas, nc, ny, washington, colorado, minnesota)
+all_states <- rbind(alabama, texas, nc, ny, washington, 
+                    colorado, minnesota)
 all_states[sample(nrow(all_states), 10), ]
 ```
 
 ```{r}
 all_states_final <- all_states |>
   mutate(Region = factor(case_when(
-    State == 'Texas' ~ 'West South Central', # use NA to set a value to missing
+    State == 'Texas' ~ 'West South Central', 
     State == 'Alabama' ~ 'East South Central',
     State == 'North Carolina' ~ 'South Atlantic',
     State == 'New York' ~ 'Middle Atlantic',
@@ -136,22 +140,52 @@ all_states_final <- all_states |>
     State == 'Minnesota' ~ 'West North Central',
     TRUE ~ State #this says to keep all other values the same
   )), School.Funding.Cat = factor(case_when(
-    School.Funding.Adequacy < 0 ~ 'Inadequate', # use NA to set a value to missing
+    School.Funding.Adequacy < 0 ~ 'Inadequate', 
     School.Funding.Adequacy > 0  ~ 'Adequate',
   TRUE ~ NA
-  )))
+  ), levels=c('Inadequate', 'Adequate'), labels=c(0, 1)))
 
-all_states_final[sample(nrow(all_states_final), 10), c('State', 'County', 'School.Funding.Adequacy', 'Region', 'School.Funding.Cat')]
+
+
+all_states_final[sample(nrow(all_states_final), 10), 
+c('State', 'County', 'School.Funding.Adequacy', 'Region', 
+  'School.Funding.Cat')]
 ```
-```{r}
-
-```
 
 
-**Exploratory Plots:**
-
+**Exploratory Plots:** 
+Q1 Outcome Variable (Juvenile Arrests):
 ```{r plots-1}
 
+```
+
+Q1 Relationship of Interest (Residential Segregation vs. Juvenile Arrests):
+```{r plots-2}
+
+```
+
+Q2 Outcome Variable (School Funding Adequacy):
+
+```{r}
+ggplot(all_states_final, aes(x = State, fill=School.Funding.Cat)) + 
+  geom_bar() + labs(x="State", y="Count of Counties", 
+  fill='School Funding Adequacy', title = "School Funding Adequacy 
+  in Seven US States") + theme(axis.text.x = 
+  element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_fill_discrete(labels=c('Inadequate Funding', 
+  'Adequate Funding', 'No Data Available'))
+```
+
+Q2 Relationship of Interest (School Segregation & School Funding
+Adequacy):
+
+```{r plots-4}
+ggplot(all_states_final, aes(x= School.Segregation.Index, y= School.Funding.Cat))+
+  geom_jitter()+ 
+  labs(title = "School Segregation vs. School Funding Adequacy 
+       in Counties Across 7 US States",
+       x = "School Segregation Index",
+       y = "School Funding Adequacy") 
 ```
 
 # Dataset 2
@@ -162,11 +196,13 @@ all_states_final[sample(nrow(all_states_final), 10), c('State', 'County', 'Schoo
 
 **Research question 1:**
 
--   Outcome variable (include the name/description and type of variable):
+-   Outcome variable (include the name/description and type of
+    variable):
 
 **Research question 2:**
 
--   Outcome variable (include the name/description and type of variable):
+-   Outcome variable (include the name/description and type of
+    variable):
 
 **Load the data and provide a `glimpse()`**:
 
@@ -176,7 +212,7 @@ all_states_final[sample(nrow(all_states_final), 10), c('State', 'County', 'Schoo
 
 **Exploratory Plots:**
 
-```{r plots-2}
+```{r plots-5}
 
 ```
 
@@ -190,11 +226,13 @@ all_states_final[sample(nrow(all_states_final), 10), c('State', 'County', 'Schoo
 
 **Research question 1:**
 
--   Outcome variable (include the name/description and type of variable):
+-   Outcome variable (include the name/description and type of
+    variable):
 
 **Research question 2:**
 
--   Outcome variable (include the name/description and type of variable):
+-   Outcome variable (include the name/description and type of
+    variable):
 
 **Load the data and provide a `glimpse()`**:
 
@@ -213,14 +251,20 @@ all_states_final[sample(nrow(all_states_final), 10), c('State', 'County', 'Schoo
 # Team Charter
 
 #### When will you meet as a team to work on the project components? Will these meetings be held in person or virtually?
-We will meet virtually on Tuesday between 8 and 9 pm. 
 
+We will meet virtually on Tuesday between 8 and 9 pm.
 
 #### What is your group policy on missing team meetings (e.g., how much advance notice should be provided)?
-If a team member will be missing a meeting, they should provide around 10-12 hours of advance notice (the morning of).
+
+If a team member will be missing a meeting, they should provide around
+10-12 hours of advance notice (the morning of).
 
 #### How will your team communicate (email, Slack, text messages)? What is your policy on appropriate response time (within a certain number of hours? Nights/weekends?)?
-We will be using WhatsApp primarily for communication, with Slack as our secondary chat. We will send Zoom invites via email to reserve our weekly meeting time (Tuesdays 8-9 pm). Ideally, team members should respond to or acknowledge messages within 1-3 hours on weekdays and 12 hours on weekends/during the night.
 
+We will be using WhatsApp primarily for communication, with Slack as our
+secondary chat. We will send Zoom invites via email to reserve our
+weekly meeting time (Tuesdays 8-9 pm). Ideally, team members should
+respond to or acknowledge messages within 1-3 hours on weekdays and 12
+hours on weekends/during the night.
 
 #### 
