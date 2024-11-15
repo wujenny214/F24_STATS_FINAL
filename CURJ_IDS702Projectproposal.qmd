@@ -21,7 +21,7 @@ County Health Rankings & Roadmaps (NC 2024 County Data: https://www.countyhealth
 This dataset contains health factor and health outcome data for each county in NC in 2024. It is provided as part of a program by the University of Wisconsin Population Health Institute () and combines data from other sources, such as the Behavioral Risk Factor Surveillance System & National Center for Health Statistics.
 
 **Research question 1:**
-What is the relationship between residential segregation (continuous variable) and juvenile arrests (continuous variable)? How is this relationship affected by the county's median household income (categorical variable, where 0=below national average, 1=above national average)?
+What is the relationship between residential segregation (continuous variable) and juvenile arrests (continuous variable)? How is this relationship affected by the region of the US that the county / state is in (categorical variable called Region)?
 
 Residential segregation = Index of dissimilarity where higher values indicate greater residential segregation between Black and white county residents (2018-2022 data).
 
