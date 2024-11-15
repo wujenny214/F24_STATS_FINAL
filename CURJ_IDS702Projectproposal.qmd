@@ -52,20 +52,99 @@ maybe look at year as interaction
 **Load the data and provide a `glimpse()`**:
 
 ```{r data-1, warning=FALSE}
-texas_full <- read.csv('https://github.com/rrandev03/Practical-Data-Science/raw/refs/heads/main/Texas.csv', skip=1)
+alabama_full <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/Alabama.csv', skip=1)
+texas_full <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/Texas.csv', skip=1)
+nc_full <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/North%20Carolina.csv', skip=1)
+colorado_full <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/Colorado.csv', skip=1)
+washington_full <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/Washington.csv', skip=1)
+ny_full <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/New%20York.csv', skip=1)
+minnesota_full <-  read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/Minnesota.csv', skip=1)
 #colnames(texas_full)
 ```
 
 ```{r}
-texas <- texas_full[c('FIPS', 'State', 'County', "Segregation.Index", "Spending.per.Pupil", "School.Funding.Adequacy", "Segregation.Index.1", "Juvenile.Arrest.Rate")]
-head(texas)
+head(alabama_full)
 ```
+
+
+```{r}
+desired_cols <- c('FIPS', 'State', 'County', "Segregation.Index", "Spending.per.Pupil", "School.Funding.Adequacy", "Segregation.Index.1", "Juvenile.Arrest.Rate")
+
+alabama <- alabama_full[desired_cols]
+texas <- texas_full[desired_cols]
+nc <- nc_full[desired_cols]
+ny <- ny_full[desired_cols]
+washington <- washington_full[desired_cols]
+colorado <- colorado_full[desired_cols]
+minnesota <- minnesota_full[desired_cols]
+
+```
+
 ```{r}
 texas <- texas |> 
   rename(
+    School.Segregation.Index = Segregation.Index,
     Residential.Segregation.Index = Segregation.Index.1)
 
-head(texas)
+alabama <- alabama |> 
+  rename(
+    School.Segregation.Index = Segregation.Index,
+    Residential.Segregation.Index = Segregation.Index.1)
+
+nc <- nc |> 
+  rename(
+    School.Segregation.Index = Segregation.Index,
+    Residential.Segregation.Index = Segregation.Index.1)
+
+ny <- ny |> 
+  rename(
+    School.Segregation.Index = Segregation.Index,
+    Residential.Segregation.Index = Segregation.Index.1)
+
+washington <- washington |> 
+  rename(
+    School.Segregation.Index = Segregation.Index,
+    Residential.Segregation.Index = Segregation.Index.1)
+
+colorado <- colorado |> 
+  rename(
+    School.Segregation.Index = Segregation.Index,
+    Residential.Segregation.Index = Segregation.Index.1)
+
+minnesota <- minnesota |> 
+  rename(
+    School.Segregation.Index = Segregation.Index,
+    Residential.Segregation.Index = Segregation.Index.1)
+
+head(minnesota)
+```
+
+```{r}
+all_states <- rbind(alabama, texas, nc, ny, washington, colorado, minnesota)
+all_states[sample(nrow(all_states), 10), ]
+```
+
+```{r}
+all_states_final <- all_states |>
+  mutate(Region = factor(case_when(
+    State == 'Texas' ~ 'West South Central', # use NA to set a value to missing
+    State == 'Alabama' ~ 'East South Central',
+    State == 'North Carolina' ~ 'South Atlantic',
+    State == 'New York' ~ 'Middle Atlantic',
+    State == 'Washington' ~ 'Pacific',
+    State == 'Colorado' ~ 'Mountain',
+    State == 'Minnesota' ~ 'West North Central',
+    TRUE ~ State #this says to keep all other values the same
+  )), School.Funding.Cat = factor(case_when(
+    School.Funding.Adequacy < 0 ~ 'Inadequate', # use NA to set a value to missing
+    School.Funding.Adequacy > 0  ~ 'Adequate',
+  TRUE ~ NA
+  )))
+
+all_states_final[sample(nrow(all_states_final), 10), c('State', 'County', 'School.Funding.Adequacy', 'Region', 'School.Funding.Cat')]
+```
+```{r}
+
 ```
 
 
