@@ -144,7 +144,9 @@ all_states_final <- all_states |>
 all_states_final[sample(nrow(all_states_final), 10), c('State', 'County', 'School.Funding.Adequacy', 'Region', 'School.Funding.Cat')]
 ```
 ```{r}
-
+acs_proptax <- read.csv('https://raw.githubusercontent.com/wujenny214/F24_STATS_FINAL/refs/heads/main/county_data/acs_proptax.csv')
+merged_data_full <- merge(acs_proptax, all_states_final, by = "FIPS")
+merged_data_full <- select(merged_data_full, -c(6, 7))
 ```
 
 
