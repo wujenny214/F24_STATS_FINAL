@@ -14,7 +14,7 @@ editor:
 library(dplyr)
 ```
 
-# NFL Dataset 
+# NFL Dataset
 
 **Data source:** NFL Kaggle 2025 Play Dataset
 https://www.kaggle.com/competitions/nfl-big-data-bowl-2025/data?select=player_play.csv
@@ -38,22 +38,22 @@ Independent Variables: **dropbackType**: The type of drop back after the
 snap by the QB (Traditional, Designed Rollout, Scramble, Scramble
 Rollout, Designed Rollout Left, Designed Rollout Right, Scramble Rollout
 Left, Scramble Rollout Right, Designed Run, QB Draw, Rollout, text)
-(categorical) \
+(categorical)\
 **dropbackDistance**: The distance the QB dropped back (yards) behind
-the center after the snap (numeric) \
+the center after the snap (numeric)\
 **timeToSack**: Time before the QB is sacked; this indicates the level
 of pass protection (numeric) **rushLocationType**: Indicates where
 defensive pressure might be coming from; outside pressure can force
 quicker throws. (categorical)
 
-Possible other variables: \
+Possible other variables:\
 **pff_passCoverage**: Defensive coverage scheme (e.g., man vs. zone);
-some schemes are harder to throw against.(categorica) \
+some schemes are harder to throw against.(categorica)\
 **pff_manZone**: Specific indicator of man or zone coverage.
-(categorical) \
+(categorical)\
 **unblockedPressure**: Whether there was pressure from an unblocked
 defender; unblocked pressure typically lowers completion probability.
-(binary) \
+(binary)\
 **passTippedAtLine**: Whether the pass was tipped; this directly impacts
 completion probability.(binary)
 
@@ -66,17 +66,17 @@ homeTeamWinProbabilityAdded
 Independent Variable: **quarter**: the quarter the play is in may impact
 the delta of the teams probability of winning as any slip up in the
 latter half of the game may be more determental and harder to come back
-from. \
+from.\
 **down**: how many downs are left in the play impacts when the team has
 the ball\
 **yardsToGo:** how many yards they have left to increase scoring
-opportunities \
+opportunities\
 **gameClock:** how much time they have left to increase scoring
-opportunities \
+opportunities\
 **preSnapHomeScore**: how far behind the are may impact their likelihood
 of coming back or their hold on the game\
 **preSnapVisitorScore**: how far ahead the opponent may be may impact
-their likelihood of the team's coming back or hold on the game \
+their likelihood of the team's coming back or hold on the game\
 \
 We can add an interaction term for quarter and down as that will test
 whether the effect of down and distance on win probability change is
@@ -89,16 +89,17 @@ nfldata <- read.csv("https://raw.githubusercontent.com/wujenny214/F24_STATS_FINA
 glimpse(nfldata) 
 ```
 
-**Exploratory Plots:** \
+**Exploratory Plots:**\
 \
 RQ1: Does the distance that a quarterback drops back after the snap
 affect the probability of a pass completion?
 
 ```{r}
 #Build a histogram of the win probably delta, "homeTeamWinProbabilityAdded" 
+library(ggplot2)
 
 ggplot(nfldata, aes(x = as.factor(quarter), y = preSnapHomeTeamWinProbability)) +
-  geom_line() +
+  geom_histogram() +
   labs(title = "Win Probability Before Play by Quarter (Home Team)", x = "Quarter", y = "Home Team Win Probability")
 ```
 
@@ -106,5 +107,49 @@ RQ2: How does the game situation affect win probability change?
 
 ```{r}
 #Create a plot that demonstrates the relationship between the game's characteristics and the probability of winning. maybe a graph on gameClock and homeTeamWinProbabilityAdded
+ggplot(nfldata, aes(x = homeTeamWinProbabilityAdded)) +
+  geom_histogram(binwidth = 0.05, fill = "skyblue") +  # Adjust binwidth as needed
+  labs(title = "Home Team Win Probability Added Distribution",
+       x = "Home Team Win Probability Added",
+       y = "Count") +
+  theme_minimal()  # Minimal theme for a clean look
+```
+
+```{r}
+#Create a plot that demonstrates the relationship between the game's characteristics and the probability of winning. maybe a graph on gameClock and homeTeamWinProbabilityAdded
+# Load the necessary packages
+library(ggplot2)
+library(patchwork)
+
+# Create the individual plots
+plot1 <- ggplot(nfldata, aes(x = factor(down), y = homeTeamWinProbabilityAdded)) +
+  geom_boxplot(fill = 'purple') +
+  labs(x = "Down", y = "Home Team Win Probability Added") + 
+  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8))
+
+plot2 <- ggplot(nfldata, aes(x = factor(quarter), y = homeTeamWinProbabilityAdded)) +
+  geom_boxplot(fill = "green") +
+  labs(x = "Quarter", y = "Win Probability") +
+  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8))
+
+plot3 <- ggplot(nfldata, aes(x = preSnapVisitorScore, y = homeTeamWinProbabilityAdded)) +
+  geom_point(color = "red") +
+  labs(x = "Pre-Snap Visitor Score", y = "Win Probability") +
+  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8))
+
+# Combine the plots using patchwork
+combined_plot <- plot1 + plot2 + plot3 + 
+  plot_layout(ncol = 2, nrow = 2) + 
+  plot_annotation(title = "Relationships Between Predictors and Win Probability Outcome",
+                  theme = theme(plot.title = element_text(hjust = 0.5)))
+
+# Print the combined plot
+print(combined_plot)
 
 ```
