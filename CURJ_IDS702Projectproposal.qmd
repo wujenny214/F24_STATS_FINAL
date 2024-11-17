@@ -3,6 +3,9 @@ title: "Project Proposal"
 author: "ALL group member names here"
 subtitle: "Due November 17 at 11:59pm"
 format: pdf
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
 #### Load Packages
@@ -10,46 +13,81 @@ format: pdf
 ```{r load-packages, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(dplyr)
+library(ggplot2)
+library(GGally)
+library(patchwork)
 ```
 
 # Dataset 1 (top choice)
 
-**Data source:**
-County Health Rankings & Roadmaps (NC 2024 County Data: https://www.countyhealthrankings.org/health-data/north-carolina/data-and-resources)
+**Data source:** County Health Rankings & Roadmaps
+https://www.countyhealthrankings.org/health-data/north-carolina/data-and-resources)
 
-**Brief description:**
-This dataset contains health factor and health outcome data for each county in NC in 2024. It is provided as part of a program by the University of Wisconsin Population Health Institute () and combines data from other sources, such as the Behavioral Risk Factor Surveillance System & National Center for Health Statistics.
+Secondary dataset: https://data.census.gov/table/ACSDT1Y2018.B25103?q=property
 
-**Research question 1:**
-What is the relationship between residential segregation (continuous variable) and juvenile arrests (continuous variable)? How is this relationship affected by the region of the US that the county / state is in (categorical variable called Region)?
+**Brief description:** The source of the datasets includes health
+factor and health outcome data for each county in the US by state in
+2024. These datasets are provided as part of a program by the University
+of Wisconsin Population Health Institute and combines data from other
+sources, such as the Behavioral Risk Factor Surveillance System &
+National Center for Health Statistics. We are compiling the datasets for
+seven states in seven different regions of the US to create one dataset
+(North Carolina, Texas, Alabama, Colorado, Minnesota, Washington, & New
+York). We will also be merging in a second American Community Survey dataset to obtain property tax data for our second research question.
 
-Residential segregation = Index of dissimilarity where higher values indicate greater residential segregation between Black and white county residents (2018-2022 data).
+**Research question 1:** What is the relationship between residential
+segregation (continuous variable), percentage of the county population
+with limited access to healthy foods (continuous variable), and
+percentage of adults who are uninsured (continuous variable), and
+average life expectancy (continuous variable)? How is the relationship
+between residential segregation and life expectancy affected by the
+region of the US that the county / state is in (categorical variable
+that we will create called Region)? The outcome variable is average life
+expectancy. The predictors are residential segregation, percentage with
+limited access to healthy foods, and percentage of adults who are
+uninsured.
 
-Juvenile arrests = Rate of delinquency cases per 1000 juveniles (2021 data).
+Average life expectancy = average number of years a person is expected
+to live (data from National Center for Health Statistics - Natality and
+Mortality Files; Census Population Estimates Program, 2019-2021).
 
-NY = 52
-TX = 254
-NC = 100
-MN = 87
-CO = 64
-WA = 39
-AL = 67
+Residential segregation = Index of dissimilarity where higher values
+indicate greater residential segregation between Black and white county
+residents (data from American Community Survey 5-year estimate,
+2018-2022).
 
+Percentage limited access to healthy foods = Percentage of population
+who are low-income and do not live close to a grocery store (data from
+USDA Food Environment Atlas, 2019).
 
+Percentage adults uninsured = Percentage of adults under age 65 without
+health insurance (data from Small Area Health Insurance Estimates,
+2021).
 
+**Research question 2:** What is the relationship between residential
+segregation (continuous variable), property tax (continuous variable),
+and median household income (continuous variable), on school funding
+adequacy (categorical variable that we will create)?
 
-**Research question 2:**
+The outcome variable is school funding adequacy, with 0=inadequate
+funding and 1=adequate funding. The predictors are residential
+segregation, property tax, and median household income.
 
--   How does school segregation level (continuous predictor) relate to school funding adequacy (categorical outcome)?
+School funding adequacy = The average gap in dollars between actual and
+required spending per pupil among public school districts. Required
+spending is an estimate of dollars needed to achieve U.S. average test
+scores in each district. (data from School Finance Indicators Database,
+2021).
 
-Qs:
--Is it okay if the variables' data come from different years? 
-state in report and consider it a limitation
--Is it better to combine multiple years of data for the same set of counties or include 5 different states' counties (but same year)?
-maybe look at year as interaction
--Is it okay if original dataset only has numerical data and we turn some of the variables into categorical?
+Median property tax = Median property tax value for each county between
+2018-2022 (data from IPUMS).
 
-**Load the data and provide a `glimpse()`**:
+Median household income = The income where half of households in a
+county earn more and half of households earn less (data from Small Area
+Income and Poverty Estimates; American Community Survey, 5-year
+estimates, 2022 & 2018-2022).
+
+**Load the datasets and prepare final dataset`**:
 
 ```{r data-1, warning=FALSE}
 alabama_full <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/Alabama.csv', skip=1)
@@ -59,16 +97,17 @@ colorado_full <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/ref
 washington_full <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/Washington.csv', skip=1)
 ny_full <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/New%20York.csv', skip=1)
 minnesota_full <-  read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/Minnesota.csv', skip=1)
-#colnames(texas_full)
+#colnames(alabama_full)
 ```
 
 ```{r}
-head(alabama_full)
-```
-
-
-```{r}
-desired_cols <- c('FIPS', 'State', 'County', "Segregation.Index", "Spending.per.Pupil", "School.Funding.Adequacy", "Segregation.Index.1", "Juvenile.Arrest.Rate")
+desired_cols <- c('FIPS', 'State', 'County', 
+"Life.Expectancy", 
+"Segregation.Index.1", "X..Limited.Access.to.Healthy.Foods.1", 
+"X..Uninsured.Adults.1", 
+"Spending.per.Pupil", "School.Funding.Adequacy", 
+"Median.Household.Income" 
+)
 
 alabama <- alabama_full[desired_cols]
 texas <- texas_full[desired_cols]
@@ -77,57 +116,69 @@ ny <- ny_full[desired_cols]
 washington <- washington_full[desired_cols]
 colorado <- colorado_full[desired_cols]
 minnesota <- minnesota_full[desired_cols]
-
+#head(alabama)
 ```
 
 ```{r}
+
 texas <- texas |> 
   rename(
-    School.Segregation.Index = Segregation.Index,
+    Percent.Uninsured.Adults = X..Uninsured.Adults.1, 
+    Percent.Limited.Access.Healthy.Foods = X..Limited.Access.to.Healthy.Foods.1,
     Residential.Segregation.Index = Segregation.Index.1)
 
 alabama <- alabama |> 
   rename(
-    School.Segregation.Index = Segregation.Index,
+    Percent.Uninsured.Adults = X..Uninsured.Adults.1, 
+    Percent.Limited.Access.Healthy.Foods = X..Limited.Access.to.Healthy.Foods.1,
     Residential.Segregation.Index = Segregation.Index.1)
 
 nc <- nc |> 
   rename(
-    School.Segregation.Index = Segregation.Index,
+    Percent.Uninsured.Adults = X..Uninsured.Adults.1, 
+    Percent.Limited.Access.Healthy.Foods = X..Limited.Access.to.Healthy.Foods.1,
     Residential.Segregation.Index = Segregation.Index.1)
 
 ny <- ny |> 
   rename(
-    School.Segregation.Index = Segregation.Index,
+    Percent.Uninsured.Adults = X..Uninsured.Adults.1, 
+    Percent.Limited.Access.Healthy.Foods = X..Limited.Access.to.Healthy.Foods.1,
     Residential.Segregation.Index = Segregation.Index.1)
 
 washington <- washington |> 
   rename(
-    School.Segregation.Index = Segregation.Index,
+    Percent.Uninsured.Adults = X..Uninsured.Adults.1, 
+    Percent.Limited.Access.Healthy.Foods = X..Limited.Access.to.Healthy.Foods.1,
     Residential.Segregation.Index = Segregation.Index.1)
 
 colorado <- colorado |> 
   rename(
-    School.Segregation.Index = Segregation.Index,
+    Percent.Uninsured.Adults = X..Uninsured.Adults.1, 
+    Percent.Limited.Access.Healthy.Foods = X..Limited.Access.to.Healthy.Foods.1,
     Residential.Segregation.Index = Segregation.Index.1)
 
 minnesota <- minnesota |> 
   rename(
-    School.Segregation.Index = Segregation.Index,
+    Percent.Uninsured.Adults = X..Uninsured.Adults.1, 
+    Percent.Limited.Access.Healthy.Foods = X..Limited.Access.to.Healthy.Foods.1,
     Residential.Segregation.Index = Segregation.Index.1)
 
-head(minnesota)
+#head(minnesota)
 ```
 
 ```{r}
-all_states <- rbind(alabama, texas, nc, ny, washington, colorado, minnesota)
-all_states[sample(nrow(all_states), 10), ]
+#Remove the first row from each dataset before concatenating 
+#because it contains statewide data instead of a specific county
+all_states <- rbind(alabama[-1,], texas[-1,], nc[-1,], ny[-1,], 
+                    washington[-1,], colorado[-1,], minnesota[-1,]) 
+#all_states[sample(nrow(all_states), 10), ]
 ```
 
 ```{r}
 all_states_final <- all_states |>
-  mutate(Region = factor(case_when(
-    State == 'Texas' ~ 'West South Central', # use NA to set a value to missing
+  mutate(
+    Region = factor(case_when(
+    State == 'Texas' ~ 'West South Central', 
     State == 'Alabama' ~ 'East South Central',
     State == 'North Carolina' ~ 'South Atlantic',
     State == 'New York' ~ 'Middle Atlantic',
@@ -136,25 +187,122 @@ all_states_final <- all_states |>
     State == 'Minnesota' ~ 'West North Central',
     TRUE ~ State #this says to keep all other values the same
   )), School.Funding.Cat = factor(case_when(
-    School.Funding.Adequacy < 0 ~ 'Inadequate', # use NA to set a value to missing
+    School.Funding.Adequacy < 0 ~ 'Inadequate', 
     School.Funding.Adequacy > 0  ~ 'Adequate',
   TRUE ~ NA
-  )))
+  ), levels=c('Inadequate', 'Adequate'), labels=c(0, 1)))
 
-all_states_final[sample(nrow(all_states_final), 10), c('State', 'County', 'School.Funding.Adequacy', 'Region', 'School.Funding.Cat')]
 ```
+
 ```{r}
-acs_proptax <- read.csv('https://raw.githubusercontent.com/wujenny214/F24_STATS_FINAL/refs/heads/main/county_data/acs_proptax.csv')
-merged_data_full <- merge(acs_proptax, all_states_final, by = "FIPS")
-merged_data_full <- select(merged_data_full, -c(6, 7))
+prop_tax <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/acs_proptax.csv')
 ```
 
+```{r}
 
-**Exploratory Plots:**
+merged_df <- merge(all_states_final, prop_tax, by = "FIPS", 
+              all.x = TRUE, all.y = TRUE)
 
-```{r plots-1}
+#merged_df[sample(nrow(all_states_final), 10), ]
+#colSums(is.na(final_df))
+```
+
+```{r}
+final_df <- merged_df |> 
+  mutate(
+    Median.Prop.Tax = as.numeric(med_re_.taxes_tot))
+final_df = subset(final_df, select = -c(med_re_.taxes_tot, geo_id, county_name, state_name) )
 
 ```
+
+**Provide a `glimpse():**
+
+```{r}
+glimpse(final_df)
+```
+
+**Exploratory Plots:** Q1 Outcome Variable (Life Expectancy):
+
+```{r plots-1, warning=FALSE}
+ggplot(final_df, aes(x = Life.Expectancy)) +
+  geom_histogram(binwidth = 0.5, fill = "skyblue") +
+  facet_wrap(~ Region) +
+  labs(title = "Life Expectancy Distribution", x = "Life Expectancy", y = "Count")
+```
+
+Q1 Relationship of Interest:
+
+```{r plots-2, warning=FALSE}
+plot1 <- ggplot(final_df, aes(x = Residential.Segregation.Index, y = Life.Expectancy)) +
+  geom_point(color='purple') +
+  labs(x = "Residential Segregation", y = "Life Expectancy")+ 
+  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
+axis.title.x = element_text(size = 8),
+axis.title.y = element_text(size = 8))
+
+plot2 <- ggplot(final_df, aes(x = Percent.Limited.Access.Healthy.Foods
+, y = Life.Expectancy)) +
+  geom_point(color = "green") +
+  labs( x = "% Population With Limited Healthy Food Access") +
+  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8))
+
+plot3 <- ggplot(final_df, aes(x = Percent.Uninsured.Adults, y = Life.Expectancy)) +
+  geom_point(color = "blue") +
+  labs(x = "% Adult Population Without Health Insurance", y = "Life Expectancy")+ 
+  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8))
+
+plot1 + plot2 + plot3 + plot_layout(ncol = 2, nrow=2) + 
+  plot_annotation(title = "Relationships Between Predictors and 
+                  Life Expectancy Outcome",
+                  theme = theme(
+      plot.title = element_text(hjust=0.5)))
+```
+
+Q2 Outcome Variable (School Funding Adequacy):
+
+```{r}
+ggplot(final_df, aes(x = State, fill=School.Funding.Cat)) + 
+  geom_bar() + labs(x="State", y="Count of Counties", 
+  fill='School Funding Adequacy', title = "School Funding Adequacy 
+  in Seven US States") + theme(axis.text.x = 
+  element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_fill_discrete(labels=c('Inadequate Funding', 
+  'Adequate Funding', 'No Data Available'))
+```
+
+Q2 Relationship of Interest:
+
+```{r plots-4, warning=FALSE}
+ggpairs(final_df, columns = c("Residential.Segregation.Index", 
+                              "Median.Household.Income",
+                              "Median.Prop.Tax"), 
+        aes(color = School.Funding.Cat)) + 
+        labs(title = "Pairwise Plots of Predictors Colored by 
+             School Funding Adequacy",
+              x = "Predictor 1",
+              y = "Predictor 2",
+              color = "School Funding Adequacy") +
+         theme(plot.title = element_text(size=15, hjust=0.5), 
+               strip.text.x = element_text(size = 5),
+               strip.text.y = element_text(size = 4))
+
+
+```
+
+The above figure is a pairwise scatterplot for each pair of predictor
+variables (residential segregation, property tax, and household income),
+with the points being colored by the school funding adequacy outcome.
+Along the diagonal are histograms showing the distribution of each
+individual predictor, separated by each level of the school funding
+adequacy outcome variable (red = 0, or inadequate funding; blue = 1, or
+adequate funding; gray = NA values). The upper half shows the
+correlation coefficient between each pair of predictors, and also the
+specific correlation coefficients when the data is separated out by each
+level of the outcome.
 
 # Dataset 2
 
@@ -164,11 +312,13 @@ merged_data_full <- select(merged_data_full, -c(6, 7))
 
 **Research question 1:**
 
--   Outcome variable (include the name/description and type of variable):
+-   Outcome variable (include the name/description and type of
+    variable):
 
 **Research question 2:**
 
--   Outcome variable (include the name/description and type of variable):
+-   Outcome variable (include the name/description and type of
+    variable):
 
 **Load the data and provide a `glimpse()`**:
 
@@ -178,7 +328,7 @@ merged_data_full <- select(merged_data_full, -c(6, 7))
 
 **Exploratory Plots:**
 
-```{r plots-2}
+```{r plots-5}
 
 ```
 
@@ -192,11 +342,13 @@ merged_data_full <- select(merged_data_full, -c(6, 7))
 
 **Research question 1:**
 
--   Outcome variable (include the name/description and type of variable):
+-   Outcome variable (include the name/description and type of
+    variable):
 
 **Research question 2:**
 
--   Outcome variable (include the name/description and type of variable):
+-   Outcome variable (include the name/description and type of
+    variable):
 
 **Load the data and provide a `glimpse()`**:
 
@@ -215,14 +367,20 @@ merged_data_full <- select(merged_data_full, -c(6, 7))
 # Team Charter
 
 #### When will you meet as a team to work on the project components? Will these meetings be held in person or virtually?
-We will meet virtually on Tuesday between 8 and 9 pm. 
 
+We will meet virtually on Tuesday between 8 and 9 pm.
 
 #### What is your group policy on missing team meetings (e.g., how much advance notice should be provided)?
-If a team member will be missing a meeting, they should provide around 10-12 hours of advance notice (the morning of).
+
+If a team member will be missing a meeting, they should provide around
+10-12 hours of advance notice (the morning of).
 
 #### How will your team communicate (email, Slack, text messages)? What is your policy on appropriate response time (within a certain number of hours? Nights/weekends?)?
-We will be using WhatsApp primarily for communication, with Slack as our secondary chat. We will send Zoom invites via email to reserve our weekly meeting time (Tuesdays 8-9 pm). Ideally, team members should respond to or acknowledge messages within 1-3 hours on weekdays and 12 hours on weekends/during the night.
 
+We will be using WhatsApp primarily for communication, with Slack as our
+secondary chat. We will send Zoom invites via email to reserve our
+weekly meeting time (Tuesdays 8-9 pm). Ideally, team members should
+respond to or acknowledge messages within 1-3 hours on weekdays and 12
+hours on weekends/during the night.
 
 #### 
