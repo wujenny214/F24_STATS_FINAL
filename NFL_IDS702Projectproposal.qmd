@@ -148,13 +148,15 @@ nfldata_1_viz <-nfldata_1 %>%
 
 ggpairs(
   nfldata_1_viz,
-  columns = c("dropbackCategory", "dropbackDistance" ),
+  columns = c("dropbackCategory", "dropbackDistance","timeToThrow", "passLength" ),
   aes(color = as.factor(passResult)), # Treat passResult as a factor
   upper = list(continuous = "points"),
   lower = list(continuous = "points")
 ) +
   labs(
     title = "Pairwise Plots of Predictors Colored by Pass Result",
+    x = "Predictor 1",
+    y = "Predictor 2",
     color = "Pass Result"
   ) +
   theme_minimal() +
