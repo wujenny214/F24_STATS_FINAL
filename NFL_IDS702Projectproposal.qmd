@@ -14,7 +14,7 @@ editor:
 library(dplyr)
 ```
 
-# NFL Dataset 
+# NFL Dataset
 
 **Data source:** NFL Kaggle 2025 Play Dataset
 https://www.kaggle.com/competitions/nfl-big-data-bowl-2025/data?select=player_play.csv
@@ -34,26 +34,27 @@ Outcome Variable: Pass Result (passResult) - This is a binary variable,
 with categories such as "Complete" (C) and "Incomplete" (I), indicating
 whether the pass was successfully completed.
 
-Independent Variables: **dropbackType**: The type of drop back after the
-snap by the QB (Traditional, Designed Rollout, Scramble, Scramble
-Rollout, Designed Rollout Left, Designed Rollout Right, Scramble Rollout
-Left, Scramble Rollout Right, Designed Run, QB Draw, Rollout, text)
-(categorical) \
+Independent Variables:
+
+**dropbackType**: The type of drop back after the snap by the QB
+(Traditional, Designed Rollout, Scramble, Scramble Rollout, Designed
+Rollout Left, Designed Rollout Right, Scramble Rollout Left, Scramble
+Rollout Right, Designed Run, QB Draw, Rollout, text) (categorical)\
 **dropbackDistance**: The distance the QB dropped back (yards) behind
-the center after the snap (numeric) \
+the center after the snap (numeric)\
 **timeToSack**: Time before the QB is sacked; this indicates the level
 of pass protection (numeric) **rushLocationType**: Indicates where
 defensive pressure might be coming from; outside pressure can force
 quicker throws. (categorical)
 
-Possible other variables: \
+Possible other variables:\
 **pff_passCoverage**: Defensive coverage scheme (e.g., man vs. zone);
-some schemes are harder to throw against.(categorica) \
+some schemes are harder to throw against.(categorica)\
 **pff_manZone**: Specific indicator of man or zone coverage.
-(categorical) \
+(categorical)\
 **unblockedPressure**: Whether there was pressure from an unblocked
 defender; unblocked pressure typically lowers completion probability.
-(binary) \
+(binary)\
 **passTippedAtLine**: Whether the pass was tipped; this directly impacts
 completion probability.(binary)
 
@@ -63,20 +64,21 @@ win probability change?
 Outcome Variable: The outcome variable would be the
 homeTeamWinProbabilityAdded
 
-Independent Variable: **quarter**: the quarter the play is in may impact
-the delta of the teams probability of winning as any slip up in the
-latter half of the game may be more determental and harder to come back
-from. \
+Independent Variable:
+
+**quarter**: the quarter the play is in may impact the delta of the
+teams probability of winning as any slip up in the latter half of the
+game may be more determental and harder to come back from.\
 **down**: how many downs are left in the play impacts when the team has
 the ball\
 **yardsToGo:** how many yards they have left to increase scoring
-opportunities \
+opportunities\
 **gameClock:** how much time they have left to increase scoring
-opportunities \
+opportunities\
 **preSnapHomeScore**: how far behind the are may impact their likelihood
 of coming back or their hold on the game\
 **preSnapVisitorScore**: how far ahead the opponent may be may impact
-their likelihood of the team's coming back or hold on the game \
+their likelihood of the team's coming back or hold on the game\
 \
 We can add an interaction term for quarter and down as that will test
 whether the effect of down and distance on win probability change is
@@ -87,24 +89,71 @@ stronger or weaker in certain quarters.
 ```{r data-1, warning=FALSE}
 nfldata <- read.csv("https://raw.githubusercontent.com/wujenny214/F24_STATS_FINAL/refs/heads/main/data/NFL/plays.csv") #replace with you file path name 
 glimpse(nfldata) 
+
 ```
 
-**Exploratory Plots:** \
+**Exploratory Plots:**\
 \
 RQ1: Does the distance that a quarterback drops back after the snap
 affect the probability of a pass completion?
 
 ```{r}
-#Build a histogram of the win probably delta, "homeTeamWinProbabilityAdded" 
+nfldata %>%
+  distinct(timeToSack)
+```
 
-ggplot(nfldata, aes(x = as.factor(quarter), y = preSnapHomeTeamWinProbability)) +
-  geom_line() +
-  labs(title = "Win Probability Before Play by Quarter (Home Team)", x = "Quarter", y = "Home Team Win Probability")
+```{r}
+nfldata_viz <- subset(
+  nfldata,
+  !is.na(dropbackType) & dropbackType != "UNKNOWN" & 
+    passResult %in% c("C", "I")
+)
+
+ggplot(nfldata_viz, aes(x = dropbackType, fill=passResult)) + 
+  geom_bar() + labs(x="dropbackType", y="dropbackDistance", 
+  fill='passResult', title = "passResult 
+  in different dropbackType") + theme(axis.text.x = 
+  element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_fill_discrete(labels=c('Complete', 
+  'Incomplete'))
+```
+
+Q1 Relationship of Interest:
+
+```{r}
+nfldata_viz <- nfldata_viz %>%
+  mutate(
+    dropbackType = ifelse(dropbackType %in% c("Traditional", "Rollout"), dropbackType, "Other")
+  )
+
+ggpairs(
+  nfldata_viz,
+  columns = c("dropbackType", "dropbackDistance" ),
+  aes(color = as.factor(passResult)), # Treat passResult as a factor
+  upper = list(continuous = "points"),
+  lower = list(continuous = "points")
+) +
+  labs(
+    title = "Pairwise Plots of Predictors Colored by Pass Result",
+    color = "Pass Result"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+
+
 ```
 
 RQ2: How does the game situation affect win probability change?
 
 ```{r}
-#Create a plot that demonstrates the relationship between the game's characteristics and the probability of winning. maybe a graph on gameClock and homeTeamWinProbabilityAdded
+
+ggplot(nfldata, aes(x = preSnapHomeTeamWinProbability)) +
+  geom_histogram(binwidth = 0.5, fill = "skyblue") +
+  facet_grid(~  as.factor(quarter))
+  labs(title = "Win Probability Before Play by Quarter (Home Team)")
 
 ```
