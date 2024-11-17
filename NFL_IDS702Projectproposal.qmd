@@ -30,33 +30,34 @@ drops back after the snap affect the probability of a pass completion?
 By focusing on quarterback actions and pass outcomes, it could help
 understand if dropping back type was effective or not.
 
-Outcome Variable: Pass Result (passResult) - This is a binary variable,
-with categories such as "Complete" (C) and "Incomplete" (I), indicating
-whether the pass was successfully completed.
+**Outcome Variable**: `passResult` (Binary: Complete/Incomplete),
+indicating whether the pass was successfully completed.
 
-Independent Variables:
+**Primary Predictors**:
 
-**dropbackType**: The type of drop back after the snap by the QB
-(Traditional, Designed Rollout, Scramble, Scramble Rollout, Designed
-Rollout Left, Designed Rollout Right, Scramble Rollout Left, Scramble
-Rollout Right, Designed Run, QB Draw, Rollout, text) (categorical)\
-**dropbackDistance**: The distance the QB dropped back (yards) behind
-the center after the snap (numeric)\
-**timeToSack**: Time before the QB is sacked; this indicates the level
-of pass protection (numeric) **rushLocationType**: Indicates where
-defensive pressure might be coming from; outside pressure can force
-quicker throws. (categorical)
+-   `dropbackDistance` (Continuous).The distance the QB dropped back
+    (yards) behind the center after the snap (numeric)
 
-Possible other variables:\
-**pff_passCoverage**: Defensive coverage scheme (e.g., man vs. zone);
-some schemes are harder to throw against.(categorica)\
-**pff_manZone**: Specific indicator of man or zone coverage.
-(categorical)\
-**unblockedPressure**: Whether there was pressure from an unblocked
-defender; unblocked pressure typically lowers completion probability.
-(binary)\
-**passTippedAtLine**: Whether the pass was tipped; this directly impacts
-completion probability.(binary)
+-   `dropbackType` (Categorical).The type of drop back after the snap by
+    the QB (Traditional, Designed Rollout, Scramble, Scramble Rollout,
+    Designed Rollout Left, Designed Rollout Right, Scramble Rollout
+    Left, Scramble Rollout Right, Designed Run, QB Draw, Rollout, text)
+    (categorical)
+
+**Contextual Variables:**
+
+-   `timeToThrow` (Continuous). The time (secs) elapsed between snap and
+    pass (numeric)
+
+-   `passLength` (Continuous). The distance beyond the LOS that the ball
+    traveled not including yards into the endzone. If thrown behind LOS,
+    the value is negative. (numeric)
+
+**Potential Interaction Terms:**
+
+-   `dropbackDistance* dropbackType` : Different types of dropbacks
+    (e.g., "Rollout" vs. "Traditional") may influence the effectiveness
+    of a specific dropback distance.
 
 **Research question 2:** Question: How does the game situation affect
 win probability change?
@@ -98,37 +99,56 @@ RQ1: Does the distance that a quarterback drops back after the snap
 affect the probability of a pass completion?
 
 ```{r}
-nfldata %>%
-  distinct(timeToSack)
+# Clean and transform dataset
+nfldata_1 <- nfldata %>%
+  # Select relevant variables
+  select(dropbackDistance, dropbackType, timeToThrow, passLength, passResult) %>%
+  # Filter for valid pass results
+  filter(
+    passResult %in% c("C", "I"),
+    !is.na(dropbackType) & dropbackType != "UNKNOWN",
+    !is.na(dropbackDistance),
+    !is.na(timeToThrow),
+    !is.na(passLength)
+  ) %>%
+  # Convert variables to factors
+  mutate(
+    dropbackType = as.factor(dropbackType),
+    passResult = as.factor(passResult)
+  )
+glimpse(nfldata_1)
+
 ```
 
 ```{r}
-nfldata_viz <- subset(
-  nfldata,
-  !is.na(dropbackType) & dropbackType != "UNKNOWN" & 
-    passResult %in% c("C", "I")
-)
-
-ggplot(nfldata_viz, aes(x = dropbackType, fill=passResult)) + 
+ggplot(nfldata_1, aes(x = dropbackType, fill=passResult)) + 
   geom_bar() + labs(x="dropbackType", y="dropbackDistance", 
-  fill='passResult', title = "passResult 
-  in different dropbackType") + theme(axis.text.x = 
+  fill='passResult', title = "passResult
+  in dropbackType") + theme(axis.text.x = 
   element_text(angle = 45, vjust = 1, hjust=1)) +
-  scale_fill_discrete(labels=c('Complete', 
-  'Incomplete'))
+  scale_fill_discrete(labels=c("Complete", "Incomplete"))
 ```
 
 Q1 Relationship of Interest:
 
 ```{r}
-nfldata_viz <- nfldata_viz %>%
+table(nfldata_1$dropbackType)
+```
+
+```{r}
+nfldata_1_viz <-nfldata_1 %>%
   mutate(
-    dropbackType = ifelse(dropbackType %in% c("Traditional", "Rollout"), dropbackType, "Other")
+    dropbackCategory = case_when(
+      dropbackType == "TRADITIONAL" ~ "Traditional",
+      dropbackType %in% c("DESIGNED_ROLLOUT_LEFT", "DESIGNED_ROLLOUT_RIGHT") ~ "Designed Rollout",
+      dropbackType %in% c("SCRAMBLE", "SCRAMBLE_ROLLOUT_LEFT", "SCRAMBLE_ROLLOUT_RIGHT") ~ "Scramble",
+      TRUE ~ NA_character_  # Handle unexpected values
+    )
   )
 
 ggpairs(
-  nfldata_viz,
-  columns = c("dropbackType", "dropbackDistance" ),
+  nfldata_1_viz,
+  columns = c("dropbackCategory", "dropbackDistance" ),
   aes(color = as.factor(passResult)), # Treat passResult as a factor
   upper = list(continuous = "points"),
   lower = list(continuous = "points")
@@ -150,7 +170,6 @@ ggpairs(
 RQ2: How does the game situation affect win probability change?
 
 ```{r}
-
 ggplot(nfldata, aes(x = preSnapHomeTeamWinProbability)) +
   geom_histogram(binwidth = 0.5, fill = "skyblue") +
   facet_grid(~  as.factor(quarter))
