@@ -123,14 +123,14 @@ library(patchwork)
 
 # Create the individual plots
 plot1 <- ggplot(nfldata, aes(x = factor(down), y = homeTeamWinProbabilityAdded)) +
-  geom_boxplot(fill = 'purple') +
+  geom_boxplot() +
   labs(x = "Down", y = "Home Team Win Probability Added") + 
   theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
         axis.title.x = element_text(size = 8),
         axis.title.y = element_text(size = 8))
 
 plot2 <- ggplot(nfldata, aes(x = factor(quarter), y = homeTeamWinProbabilityAdded)) +
-  geom_boxplot(fill = "green") +
+  geom_boxplot() +
   labs(x = "Quarter", y = "Win Probability") +
   theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
         axis.title.x = element_text(size = 8),
