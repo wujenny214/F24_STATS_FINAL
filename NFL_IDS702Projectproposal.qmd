@@ -1,0 +1,110 @@
+---
+title: "Project Proposal"
+author: "ALL group member names here"
+subtitle: "Due November 17 at 11:59pm"
+format: pdf
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+#### Load Packages
+
+```{r load-packages, message = FALSE, warning = FALSE}
+library(dplyr)
+```
+
+# NFL Dataset 
+
+**Data source:** NFL Kaggle 2025 Play Dataset
+https://www.kaggle.com/competitions/nfl-big-data-bowl-2025/data?select=player_play.csv
+
+**Brief description:** The Play Data Dataset provides detailed
+play-by-play information about football games, capturing various aspects
+of gameplay, team dynamics, and player actions. This dataset includes
+variables that tell us more about what influences game play within a
+football game.
+
+**Research question 1:** Question: Does the distance that a quarterback
+drops back after the snap affect the probability of a pass completion?
+By focusing on quarterback actions and pass outcomes, it could help
+understand if dropping back type was effective or not.
+
+Outcome Variable: Pass Result (passResult) - This is a binary variable,
+with categories such as "Complete" (C) and "Incomplete" (I), indicating
+whether the pass was successfully completed.
+
+Independent Variables: **dropbackType**: The type of drop back after the
+snap by the QB (Traditional, Designed Rollout, Scramble, Scramble
+Rollout, Designed Rollout Left, Designed Rollout Right, Scramble Rollout
+Left, Scramble Rollout Right, Designed Run, QB Draw, Rollout, text)
+(categorical) \
+**dropbackDistance**: The distance the QB dropped back (yards) behind
+the center after the snap (numeric) \
+**timeToSack**: Time before the QB is sacked; this indicates the level
+of pass protection (numeric) **rushLocationType**: Indicates where
+defensive pressure might be coming from; outside pressure can force
+quicker throws. (categorical)
+
+Possible other variables: \
+**pff_passCoverage**: Defensive coverage scheme (e.g., man vs. zone);
+some schemes are harder to throw against.(categorica) \
+**pff_manZone**: Specific indicator of man or zone coverage.
+(categorical) \
+**unblockedPressure**: Whether there was pressure from an unblocked
+defender; unblocked pressure typically lowers completion probability.
+(binary) \
+**passTippedAtLine**: Whether the pass was tipped; this directly impacts
+completion probability.(binary)
+
+**Research question 2:** Question: How does the game situation affect
+win probability change?
+
+Outcome Variable: The outcome variable would be the
+homeTeamWinProbabilityAdded
+
+Independent Variable: **quarter**: the quarter the play is in may impact
+the delta of the teams probability of winning as any slip up in the
+latter half of the game may be more determental and harder to come back
+from. \
+**down**: how many downs are left in the play impacts when the team has
+the ball\
+**yardsToGo:** how many yards they have left to increase scoring
+opportunities \
+**gameClock:** how much time they have left to increase scoring
+opportunities \
+**preSnapHomeScore**: how far behind the are may impact their likelihood
+of coming back or their hold on the game\
+**preSnapVisitorScore**: how far ahead the opponent may be may impact
+their likelihood of the team's coming back or hold on the game \
+\
+We can add an interaction term for quarter and down as that will test
+whether the effect of down and distance on win probability change is
+stronger or weaker in certain quarters.
+
+**Load the data and provide a `glimpse()`**:
+
+```{r data-1, warning=FALSE}
+nfldata <- read.csv("https://raw.githubusercontent.com/wujenny214/F24_STATS_FINAL/refs/heads/main/data/NFL/plays.csv") #replace with you file path name 
+glimpse(nfldata) 
+```
+
+**Exploratory Plots:** \
+\
+RQ1: Does the distance that a quarterback drops back after the snap
+affect the probability of a pass completion?
+
+```{r}
+#Build a histogram of the win probably delta, "homeTeamWinProbabilityAdded" 
+
+ggplot(nfldata, aes(x = as.factor(quarter), y = preSnapHomeTeamWinProbability)) +
+  geom_line() +
+  labs(title = "Win Probability Before Play by Quarter (Home Team)", x = "Quarter", y = "Home Team Win Probability")
+```
+
+RQ2: How does the game situation affect win probability change?
+
+```{r}
+#Create a plot that demonstrates the relationship between the game's characteristics and the probability of winning. maybe a graph on gameClock and homeTeamWinProbabilityAdded
+
+```

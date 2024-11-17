@@ -199,12 +199,12 @@ prop_tax <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/hea
 ```
 
 ```{r}
+
 merged_df <- merge(all_states_final, prop_tax, by = "FIPS", 
               all.x = TRUE, all.y = TRUE)
 
 #merged_df[sample(nrow(all_states_final), 10), ]
 #colSums(is.na(final_df))
-
 ```
 
 ```{r}
