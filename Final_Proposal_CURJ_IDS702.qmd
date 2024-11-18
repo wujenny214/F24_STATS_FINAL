@@ -1,11 +1,13 @@
 ---
 title: "Project Proposal"
-author: "ALL group member names here"
+author: "Jenny Wu, Rishika Randev, Shiyue Zhou, Uzoma Uwazurike"
 subtitle: "Due November 17 at 11:59pm"
 format: pdf
 editor: 
   markdown: 
     wrap: 72
+echo: FALSE
+warning: FALSE
 ---
 
 #### Load Packages
@@ -87,7 +89,7 @@ county earn more and half of households earn less (data from Small Area
 Income and Poverty Estimates; American Community Survey, 5-year
 estimates, 2022 & 2018-2022).
 
-**Load the datasets and prepare final dataset`**:
+**Load the datasets and prepare final dataset (code is hidden to reduce proposal length)**:
 
 ```{r data-1, warning=FALSE}
 alabama_full <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/Alabama.csv', skip=1)
@@ -221,7 +223,8 @@ final_df = subset(final_df, select = -c(med_re_.taxes_tot, geo_id, county_name, 
 glimpse(final_df)
 ```
 
-**Exploratory Plots:** Q1 Outcome Variable (Life Expectancy):
+**Exploratory Plots:** 
+Q1 Outcome Variable (Life Expectancy):
 
 ```{r plots-1, warning=FALSE}
 ggplot(final_df, aes(x = Life.Expectancy)) +
@@ -288,7 +291,7 @@ ggpairs(final_df, columns = c("Residential.Segregation.Index",
               color = "School Funding Adequacy") +
          theme(plot.title = element_text(size=15, hjust=0.5), 
                strip.text.x = element_text(size = 5),
-               strip.text.y = element_text(size = 4))
+               strip.text.y = element_text(size = 3))
 
 
 ```
@@ -306,63 +309,193 @@ level of the outcome.
 
 # Dataset 2
 
-**Data source:**
+**Data source:** NFL Kaggle 2025 Play Dataset
+https://www.kaggle.com/competitions/nfl-big-data-bowl-2025/data?select=player_play.csv
 
-**Brief description:**
+**Brief description:** The Play Data Dataset provides detailed
+play-by-play information about football games, capturing various aspects
+of gameplay, team dynamics, and player actions. This dataset includes
+variables that tell us more about what influences game play within a
+football game.
 
-**Research question 1:**
+**Research question 1:** Does the distance that a quarterback
+drops back after the snap and the dropback type affect the probability of a pass completion?
 
--   Outcome variable (include the name/description and type of
-    variable):
+**Outcome Variable**: `passResult` (Binary: Complete/Incomplete),
+indicating whether the pass was successfully completed.
 
-**Research question 2:**
+**Primary Predictors**:
 
--   Outcome variable (include the name/description and type of
-    variable):
+-   `dropbackDistance` (Continuous).The distance the QB dropped back
+    (yards) behind the center after the snap (numeric)
+
+-   `dropbackType` (Categorical).The type of drop back after the snap by
+    the QB (Traditional, Designed Rollout, Scramble, Scramble Rollout,
+    Designed Rollout Left, Designed Rollout Right, Scramble Rollout
+    Left, Scramble Rollout Right, Designed Run, QB Draw, Rollout, text)
+    (categorical)
+
+**Potential Interaction Terms:**
+
+-   `dropbackDistance* dropbackType` : Different types of dropbacks
+    (e.g., "Rollout" vs. "Traditional") may influence the effectiveness
+    of a specific dropback distance.
+
+
+**Research question 2:** How does the game situation (down, quarter, and opponent score) affect
+home team's win probability change after a play?
+
+**Outcome Variable**: `homeTeamWinProbabilityAdded` (Continuous),
+indicating how much the home team's win probability changes after a given play.
+
+**Primary Predictors**:
+
+-   `quarter` (Discrete), indicating whether the play is in the first, second, third, or fourth      quarter, or during overtime.
+
+-   `down` (Discrete), indicating whether the play is on a first, second, third, or fourth down.
+
+-   `preSnapVisitorScore` (Discrete), indicating the score of the oponent team prior to the          current play.
 
 **Load the data and provide a `glimpse()`**:
 
-```{r data-2, warning=FALSE}
-
+```{r, warning=FALSE}
+nfldata <- read.csv("https://raw.githubusercontent.com/wujenny214/F24_STATS_FINAL/refs/heads/main/data/NFL/plays.csv") #replace with you file path name 
+glimpse(nfldata) 
 ```
 
 **Exploratory Plots:**
+RQ1: Does the distance that a quarterback drops back after the snap
+affect the probability of a pass completion?
 
-```{r plots-5}
+Q1 Outcome Plot:
 
-```
-
-# 
-
-# Dataset 3 (optional)
-
-**Data source:**
-
-**Brief description:**
-
-**Research question 1:**
-
--   Outcome variable (include the name/description and type of
-    variable):
-
-**Research question 2:**
-
--   Outcome variable (include the name/description and type of
-    variable):
-
-**Load the data and provide a `glimpse()`**:
-
-```{r data-3, warning=FALSE}
+```{r}
+# Clean and transform dataset
+nfldata_1 <- nfldata %>%
+  # Select relevant variables
+  select(dropbackDistance, dropbackType, timeToThrow, passLength, passResult) %>%
+  # Filter for valid pass results
+  filter(
+    passResult %in% c("C", "I"),
+    !is.na(dropbackType) & dropbackType != "UNKNOWN",
+    !is.na(dropbackDistance),
+    !is.na(timeToThrow),
+    !is.na(passLength)
+  ) %>%
+  # Convert variables to factors
+  mutate(
+    dropbackType = as.factor(dropbackType),
+    passResult = as.factor(passResult)
+  )
+glimpse(nfldata_1)
 
 ```
 
-**Exploratory Plots:**
+```{r}
+ggplot(nfldata_1, aes(x = dropbackType, fill=passResult)) + 
+  geom_bar() + labs(x="dropbackType", y="dropbackDistance", 
+  fill='passResult', title = "Pass Result
+  by Dropback Type") + theme(axis.text.x = 
+  element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_fill_discrete(labels=c("Complete", "Incomplete"))
+```
 
-```{r plots-3}
+Q1 Relationship of Interest:
+
+```{r}
+table(nfldata_1$dropbackType)
+```
+
+```{r}
+nfldata_1_viz <-nfldata_1 %>%
+  mutate(
+    dropbackCategory = case_when(
+      dropbackType == "TRADITIONAL" ~ "Traditional",
+      dropbackType %in% c("DESIGNED_ROLLOUT_LEFT", "DESIGNED_ROLLOUT_RIGHT") ~ "Designed Rollout",
+      dropbackType %in% c("SCRAMBLE", "SCRAMBLE_ROLLOUT_LEFT", "SCRAMBLE_ROLLOUT_RIGHT") ~ "Scramble",
+      TRUE ~ NA_character_  # Handle unexpected values
+    )
+  )
+
+ggpairs(
+  nfldata_1_viz,
+  columns = c("dropbackCategory", "dropbackDistance", "timeToThrow", "passLength"),
+  aes(color = as.factor(passResult)), # Treat passResult as a factor
+  upper = list(continuous =  wrap("points", size = 0.3)),
+  lower = list(continuous =  wrap("points", size = 0.3))
+) +
+  labs(
+    title = "Pairwise Plots of Predictors Colored by Pass Result",
+    x = "Predictor 1",
+    y = "Predictor 2",
+    color = "Pass Result"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10),
+    axis.text.x = element_text(size = 3.5),  # Adjust x-axis text size
+    axis.text.y = element_text(size = 8),  # Adjust y-axis text size
+    axis.ticks.x = element_blank(),       # Remove excess x-axis ticks
+    axis.ticks.y = element_blank(),     # Remove excess y-axis ticks
+    strip.text.y = element_text(size = 3)
+  )
+```
+
+RQ2: How does the game situation affect win probability change?
+
+Q2 Outcome Plot:
+
+```{r}
+ggplot(nfldata, aes(x = homeTeamWinProbabilityAdded)) +
+  geom_histogram(binwidth = 0.05, fill = "skyblue") + 
+  labs(title = "Home Team Win Probability Added Distribution",
+       x = "Home Team Win Probability Added",
+       y = "Count") +
+  theme_minimal()  
+```
+
+Q2 Relationship of Interest:
+```{r}
+#Create a plot that demonstrates the relationship between the game's characteristics and the probability of winning. 
+# Load the necessary packages
+library(ggplot2)
+library(patchwork)
+
+# Create the individual plots
+plot1 <- ggplot(nfldata, aes(x = factor(down), y = homeTeamWinProbabilityAdded)) +
+  geom_boxplot() +
+  labs(x = "Down", y = "Win Probability Change") + 
+  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8))
+
+plot2 <- ggplot(nfldata, aes(x = factor(quarter), y = homeTeamWinProbabilityAdded)) +
+  geom_boxplot() +
+  labs(x = "Quarter", y = "Win Probability Change") +
+  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8))
+
+plot3 <- ggplot(nfldata, aes(x = preSnapVisitorScore, y = homeTeamWinProbabilityAdded)) +
+  geom_point(color = "red") +
+  labs(x = "Pre-Snap Visitor Score", y = "Win Probability Change") +
+  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8))
+
+# Combine the plots using patchwork
+combined_plot <- plot1 + plot2 + plot3 + 
+  plot_layout(ncol = 2, nrow = 2) + 
+  plot_annotation(title = "Relationships Between Predictors and Home Team Win Probability Change",
+                  theme = theme(plot.title = element_text(size=8, hjust = 0.5)))
+
+# Print the combined plot
+print(combined_plot)
 
 ```
 
-# 
 
 # Team Charter
 
