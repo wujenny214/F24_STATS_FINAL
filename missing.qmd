@@ -1,0 +1,102 @@
+---
+title: "cleaning.qmd"
+format: html
+editor: visual
+---
+
+```{r}
+library(dplyr)
+library(tidyverse)
+```
+
+```{r}
+combined <- read.csv('F24_STATS_FINAL/combined.csv')
+```
+
+```{r}
+combined = subset(combined, select = -c(X))
+head(combined)
+
+```
+
+```{r}
+dim(combined)
+```
+
+```{r}
+combined |> group_by(State) %>% summarise(total_count = n())
+```
+
+```{r}
+sum(duplicated(combined))
+```
+
+```{r}
+sum(duplicated(combined$FIPS))
+```
+
+```{r}
+summary(combined)
+```
+
+```{r}
+combined %>%
+           group_by(State) %>%
+           summarise(total_count = n(), Income_NA_count = sum(is.na(Median.Household.Income)), Uninsured_NA_count = sum(is.na(Percent.Uninsured.Adults)), Tax_NA_count = sum(is.na(Median.Prop.Tax)), Segregation_NA_count = sum(is.na(Residential.Segregation.Index)), Foods_NA_count = sum(is.na(Percent.Limited.Access.Healthy.Foods)), Expectancy_NA_count = sum(is.na(Life.Expectancy)), Adequacy_NA_count = sum(is.na(School.Funding.Adequacy)))
+```
+
+```{r}
+na.patterns <- naclus(combined)
+naplot(na.patterns, "na per var")
+```
+
+```{r}
+plot(na.patterns)
+```
+
+```{r}
+combined <- combined |>
+  mutate(expectancy.miss = ifelse(is.na(Life.Expectancy),1,0))
+
+expectancy_miss_mod <- glm(expectancy.miss ~ Residential.Segregation.Index+Percent.Limited.Access.Healthy.Foods+Percent.Uninsured.Adults, 
+                    data=combined, family="binomial")
+
+summary(expectancy_miss_mod)
+```
+
+```{r}
+combined <- combined |>
+  mutate(foods.miss = ifelse(is.na(Percent.Limited.Access.Healthy.Foods),1,0))
+
+foods_miss_mod <- glm(foods.miss ~ Residential.Segregation.Index+Life.Expectancy+Percent.Uninsured.Adults, 
+                    data=combined, family="binomial")
+
+summary(foods_miss_mod)
+```
+
+```{r}
+combined <- combined |>
+  mutate(funding.miss = ifelse(is.na(School.Funding.Adequacy),1,0))
+
+funding_miss_mod <- glm(funding.miss ~ Residential.Segregation.Index+Median.Prop.Tax+Median.Household.Income, 
+                    data=combined, family="binomial")
+
+summary(funding_miss_mod)
+```
+
+```{r}
+library(mice)
+library(sjlabelled)
+library(tidyverse)
+
+sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","Percent.Limited.Access.Healthy.Foods","Percent.Uninsured.Adults","Median.Household.Income", "School.Funding.Cat", "Median.Prop.Tax"))
+sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice function)
+sub.imp <- mice(sub, m=5, method="pmm", print=FALSE)
+```
+
+```{r}
+sub.mods <- with(sub.imp, #replace with. model
+)
+summary(pool(sub.mods))
+
+```

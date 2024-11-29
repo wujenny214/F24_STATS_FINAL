@@ -20,7 +20,7 @@ desired_cols <- c('FIPS', 'State',
                   "% Limited Access to Healthy Foods", 
                   "% Uninsured Adults", 
                   "Spending per Pupil", "School Funding Adequacy", 
-                  "Median Household Income" ) # Update with actual column names
+                  "Median Household Income" ) 
 
 # Base URL
 base_path <- "F24_STATS_FINAL/county_data/"
@@ -55,5 +55,51 @@ for (state in states) {
 # Combine all processed data frames into one
 combined <- do.call(rbind, all_data)
 
-# The final data frame `combined` contains all processed state data.
+#Create categorical variable for school funding adequacy
+combined_pre_merge <- combined |>
+  mutate(
+    School.Funding.Cat = factor(case_when(
+      School.Funding.Adequacy < 0 ~ 'Inadequate', 
+      School.Funding.Adequacy > 0  ~ 'Adequate',
+      TRUE ~ NA
+    ), levels=c('Inadequate', 'Adequate'), labels=c(0, 1)))
 
+#Merge with ACS (property tax) data
+acs <- read.csv("https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/acs_prop_2.csv")
+merged_df <- full_join(combined_pre_merge, acs, by = c("FIPS" = "fips")) %>%
+  mutate(
+    indicator = case_when(
+      is.na(State) & !is.na(state) ~ "Right Only",  # Row from acs only
+      !is.na(State) & is.na(state) ~ "Left Only",   # Row from combined_pre_merge only
+      !is.na(State) & !is.na(state) ~ "Both"        # Row present in both dfs
+    )
+  )
+
+print(merged_df[merged_df$indicator == "Right Only", ])
+print(merged_df[merged_df$indicator == "Left Only", ])
+#Difference of 8 rows, indicating that there are 8 counties with health data but no property tax data. 
+#Alaska and South Dakota are going to be dropped anyways due to missing residential segregation index data.
+#Looking into the VA county with missing property tax data (51515), it turns out that this county does not have any
+#health data either in the original spreadsheet, but is still recorded as a county. Upon further analysis
+#it was found that this FIPS code corresponded to Bedford City, which was merged into 51519 in 2010. Therefore it was safe to drop.
+
+merged_df <- merged_df[merged_df$FIPS != 51515, ]
+merged_df <- merged_df |> 
+  mutate(
+    Median.Prop.Tax = as.numeric(med_.re_taxes_paid))
+
+intermed_merged = subset(merged_df, select = -c(med_.re_taxes_paid, med_.re_taxes_paid_real, county.1, Location, indicator, county, state) )
+
+#Now merge with regions data
+regions <- read.csv("https://github.com/cphalpert/census-regions/raw/refs/heads/master/us%20census%20bureau%20regions%20and%20divisions.csv")
+final_merged <- left_join(intermed_merged, regions, by = c("State" = "State"))
+final_merged = subset(final_merged, select = -c(State.Code))
+
+#Rename columns
+final_merged <- final_merged |> 
+  rename(
+    Percent.Uninsured.Adults = X..Uninsured.Adults, 
+    Percent.Limited.Access.Healthy.Foods = X..Limited.Access.to.Healthy.Foods)
+
+# The final data frame `combined` contains all processed state data.
+write.csv(final_merged, '~/Documents/R\ Course\ Code/F24_STATS_FINAL/combined.csv')
