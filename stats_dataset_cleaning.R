@@ -42,7 +42,8 @@ for (state in states) {
   # Rename columns
   renamed_data <- subset_data %>%
     rename(
-      "Residential.Segregation.Index" = "Segregation Index...200"
+      "Residential.Segregation.Index" = "Segregation Index...200",
+      "School.Funding.Adequacy" = "School Funding Adequacy"
     )
   
   # Drop the first row
@@ -66,7 +67,9 @@ combined_pre_merge <- combined |>
 
 #Merge with ACS (property tax) data
 acs <- read.csv("https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/acs_prop_2.csv")
-merged_df <- full_join(combined_pre_merge, acs, by = c("FIPS" = "fips")) %>%
+combined_pre_merge$FIPS <- as.numeric(combined_pre_merge$FIPS)
+
+merged_df <- full_join(combined_pre_merge, acs, join_by("FIPS" == "fips")) %>%
   mutate(
     indicator = case_when(
       is.na(State) & !is.na(state) ~ "Right Only",  # Row from acs only
@@ -95,11 +98,11 @@ regions <- read.csv("https://github.com/cphalpert/census-regions/raw/refs/heads/
 final_merged <- left_join(intermed_merged, regions, by = c("State" = "State"))
 final_merged = subset(final_merged, select = -c(State.Code))
 
-#Rename columns
-final_merged <- final_merged |> 
-  rename(
-    Percent.Uninsured.Adults = X..Uninsured.Adults, 
-    Percent.Limited.Access.Healthy.Foods = X..Limited.Access.to.Healthy.Foods)
+
+#Due to substantial missing data in certain states, remove them from the final dataframe
+states_to_exclude <- c('Alaska', 'Colorado', 'Idaho', 'Iowa', 'Kansas', 'Minnesota', 'Montana', 'Nebraska', 'North Dakota', 'South Dakota', 'Utah', 'Wyoming', 'Vermont')
+final <- final_merged %>%
+  filter(!State %in% states_to_exclude)
 
 # The final data frame `combined` contains all processed state data.
-write.csv(final_merged, '~/Documents/R\ Course\ Code/F24_STATS_FINAL/combined.csv')
+write.csv(final, '~/Documents/R\ Course\ Code/F24_STATS_FINAL/combined.csv')

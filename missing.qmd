@@ -10,7 +10,7 @@ library(tidyverse)
 ```
 
 ```{r}
-combined <- read.csv('F24_STATS_FINAL/combined.csv')
+combined <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/combined.csv')
 ```
 
 ```{r}
@@ -98,5 +98,18 @@ sub.imp <- mice(sub, m=5, method="pmm", print=FALSE)
 sub.mods <- with(sub.imp, #replace with. model
 )
 summary(pool(sub.mods))
+```
 
+```{r}
+head(combined.subset)
+```
+
+```{r}
+combined.subset %>%
+           group_by(State) %>%
+           summarise(total_count = n(), Income_NA_count = sum(is.na(Median.Household.Income)), Uninsured_NA_count = sum(is.na(Percent.Uninsured.Adults)), Tax_NA_count = sum(is.na(Median.Prop.Tax)), Segregation_NA_count = sum(is.na(Residential.Segregation.Index)), Foods_NA_count = sum(is.na(Percent.Limited.Access.Healthy.Foods)), Expectancy_NA_count = sum(is.na(Life.Expectancy)), Adequacy_NA_count = sum(is.na(School.Funding.Adequacy)))
+```
+
+```{r}
+summary(combined.subset)
 ```
