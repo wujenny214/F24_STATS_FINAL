@@ -7,6 +7,7 @@ editor: visual
 ```{r}
 library(dplyr)
 library(tidyverse)
+library(Hmisc)
 ```
 
 ```{r}
@@ -40,9 +41,17 @@ summary(combined)
 ```
 
 ```{r}
+combined <- combined %>%
+    rename(
+      "Perc.Uninsured.Adults" = "X..Uninsured.Adults",
+      "Perc.Limited.Access.to.Healthy.Foods" = "X..Limited.Access.to.Healthy.Foods"
+    )
+```
+
+```{r}
 combined %>%
            group_by(State) %>%
-           summarise(total_count = n(), Income_NA_count = sum(is.na(Median.Household.Income)), Uninsured_NA_count = sum(is.na(Percent.Uninsured.Adults)), Tax_NA_count = sum(is.na(Median.Prop.Tax)), Segregation_NA_count = sum(is.na(Residential.Segregation.Index)), Foods_NA_count = sum(is.na(Percent.Limited.Access.Healthy.Foods)), Expectancy_NA_count = sum(is.na(Life.Expectancy)), Adequacy_NA_count = sum(is.na(School.Funding.Adequacy)))
+           summarise(total_count = n(), Income_NA_count = sum(is.na(Median.Household.Income)), Uninsured_NA_count = sum(is.na(Perc.Uninsured.Adults)), Tax_NA_count = sum(is.na(Median.Prop.Tax)), Segregation_NA_count = sum(is.na(Residential.Segregation.Index)), Foods_NA_count = sum(is.na(Perc.Limited.Access.to.Healthy.Foods)), Expectancy_NA_count = sum(is.na(Life.Expectancy)), Adequacy_NA_count = sum(is.na(School.Funding.Adequacy)))
 ```
 
 ```{r}
@@ -85,11 +94,15 @@ summary(funding_miss_mod)
 ```
 
 ```{r}
+colnames(combined)
+```
+
+```{r}
 library(mice)
 library(sjlabelled)
 library(tidyverse)
 
-sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","Percent.Limited.Access.Healthy.Foods","Percent.Uninsured.Adults","Median.Household.Income", "School.Funding.Cat", "Median.Prop.Tax"))
+sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","X..Limited.Access.to.Healthy.Foods","X..Uninsured.Adults","Median.Household.Income", "School.Funding.Cat", "Median.Prop.Tax"))
 sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice function)
 sub.imp <- mice(sub, m=5, method="pmm", print=FALSE)
 ```
@@ -98,18 +111,4 @@ sub.imp <- mice(sub, m=5, method="pmm", print=FALSE)
 sub.mods <- with(sub.imp, #replace with. model
 )
 summary(pool(sub.mods))
-```
-
-```{r}
-head(combined.subset)
-```
-
-```{r}
-combined.subset %>%
-           group_by(State) %>%
-           summarise(total_count = n(), Income_NA_count = sum(is.na(Median.Household.Income)), Uninsured_NA_count = sum(is.na(Percent.Uninsured.Adults)), Tax_NA_count = sum(is.na(Median.Prop.Tax)), Segregation_NA_count = sum(is.na(Residential.Segregation.Index)), Foods_NA_count = sum(is.na(Percent.Limited.Access.Healthy.Foods)), Expectancy_NA_count = sum(is.na(Life.Expectancy)), Adequacy_NA_count = sum(is.na(School.Funding.Adequacy)))
-```
-
-```{r}
-summary(combined.subset)
 ```

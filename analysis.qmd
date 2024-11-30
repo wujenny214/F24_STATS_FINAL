@@ -1,0 +1,64 @@
+---
+title: "analysis"
+format: html
+editor: visual
+---
+
+## Load Data & Create Factors
+
+```{r}
+combined <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/combined.csv')
+```
+
+```{r}
+head(combined)
+```
+
+```{r}
+combined <- combined |> mutate(State_fac = factor(combined$State), Region_fac = factor(combined$Region, levels=c('South', 'West', 'Northeast', 'Midwest'), labels=c(0, 1, 2, 3)))
+```
+
+```{r}
+combined <- combined %>% select(-X, -Spending.per.Pupil)
+```
+
+```{r}
+head(combined)
+```
+
+## Imputation
+
+```{r}
+
+library(mice)
+library(sjlabelled)
+library(tidyverse)
+
+
+```
+
+```{r}
+sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","X..Limited.Access.to.Healthy.Foods","X..Uninsured.Adults","Median.Household.Income", "School.Funding.Adequacy", "Median.Prop.Tax", "Region_fac"))
+sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice function)
+sub.imp <- mice(sub, m=5, method="pmm", print=FALSE)
+```
+
+```{r}
+#Need to convert school funding adequacy imputed values to school funding categorical variable before using in models
+```
+
+## Q1
+
+```{r}
+#MLR
+#Outcome = life expectancy
+#Predictors = residential segregation, limited access to healthy foods, uninsured adults, region_fac as interaction with residential segregation (or any other variable)
+```
+
+## Q2
+
+```{r}
+#Logistic 
+#Outcome = School.Funding.Cat
+#Predictors = residential segregation, median.household.income, median.prop.tax
+```
