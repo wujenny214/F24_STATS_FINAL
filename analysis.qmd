@@ -6,7 +6,13 @@ editor: visual
 
 ## Load Data & Create Factors
 
-```{r}
+```{r, echo= FALSE}
+library("dplyr")
+library(mice)
+library(sjlabelled)
+library(tidyverse)
+
+
 combined <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/combined.csv')
 ```
 
@@ -15,7 +21,7 @@ head(combined)
 ```
 
 ```{r}
-combined <- combined |> mutate(State_fac = factor(combined$State), Region_fac = factor(combined$Region, levels=c('South', 'West', 'Northeast', 'Midwest'), labels=c(0, 1, 2, 3)))
+combined <- combined |> mutate(State_fac = factor(combined$State), Region_fac = factor(combined$Region, levels=c('South', 'West', 'Northeast', 'Midwest')))
 ```
 
 ```{r}
@@ -29,15 +35,6 @@ head(combined)
 ## Imputation
 
 ```{r}
-
-library(mice)
-library(sjlabelled)
-library(tidyverse)
-
-
-```
-
-```{r}
 sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","X..Limited.Access.to.Healthy.Foods","X..Uninsured.Adults","Median.Household.Income", "School.Funding.Adequacy", "Median.Prop.Tax", "Region_fac"))
 sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice function)
 sub.imp <- mice(sub, m=5, method="pmm", print=FALSE)
@@ -45,20 +42,56 @@ sub.imp <- mice(sub, m=5, method="pmm", print=FALSE)
 
 ```{r}
 #Need to convert school funding adequacy imputed values to school funding categorical variable before using in models
+# imputated data has 5 dataframes within a list, need to run a loop for all five datasets to create a categorical variable for each set. 
 ```
 
 ## Q1
 
 ```{r}
 #MLR
-#Outcome = life expectancy
-#Predictors = residential segregation, limited access to healthy foods, uninsured adults, region_fac as interaction with residential segregation (or any other variable)
+# Outcome = life expectancy #Predictors = residential segregation, limited access to healthy foods, uninsured adults, region_fac as interaction with residential segregation (or any other variable)
+
+mlrmodel <- lm(
+  Life.Expectancy ~ Residential.Segregation.Index +
+    X..Limited.Access.to.Healthy.Foods +
+    X..Uninsured.Adults,
+  data = combined)
+summary(mlrmodel)
+
 ```
+
+```{r}
+mlr.imp.mod <- with(sub.imp, lm(Life.Expectancy ~ Residential.Segregation.Index +
+    X..Limited.Access.to.Healthy.Foods +
+    X..Uninsured.Adults + 
+    Region_fac))
+
+summary(pool(mlr.imp.mod))
+```
+
+```{r}
+mlr.imp.mod2 <- with(sub.imp, lm(Life.Expectancy ~ Residential.Segregation.Index +
+    X..Limited.Access.to.Healthy.Foods +
+    X..Uninsured.Adults + 
+    Region_fac + 
+    Region_fac * Residential.Segregation.Index))
+
+summary(pool(mlr.imp.mod2))
+```
+
+@ UZO: Add plots to check assumptions: QQ plot, nested F-test, write p-value interpretations, VIF, Cooks distance
 
 ## Q2
 
 ```{r}
 #Logistic 
+lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax,
+              data=combined,
+              family="binomial")
+summary(lmod)
+
+with(sub.imp, glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, family="binomial"))
+
 #Outcome = School.Funding.Cat
 #Predictors = residential segregation, median.household.income, median.prop.tax
 ```
