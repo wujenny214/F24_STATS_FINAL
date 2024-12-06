@@ -43,6 +43,29 @@ sub.imp <- mice(sub, m=5, method="pmm", print=FALSE)
 ```{r}
 #Need to convert school funding adequacy imputed values to school funding categorical variable before using in models
 # imputated data has 5 dataframes within a list, need to run a loop for all five datasets to create a categorical variable for each set. 
+
+# Create a function to classify school funding adequacy into categories
+# Create a function to classify school funding adequacy into categories
+categorize_school_funding <- function(x) {
+  ifelse(x < 50, "Low",
+         ifelse(x < 75, "Medium", "High"))
+}
+
+# Create an empty list to store the categorical variables
+sub.imp$imp$School.Funding.Cat <- list()
+
+# Loop over the 5 imputations
+for (i in 1:5) {
+  # Access the i-th set of imputed values for School.Funding.Adequacy
+  adequacy_values <- sub.imp$imp$School.Funding.Adequacy[, i]
+  
+  # Apply the categorization function
+  sub.imp$imp$School.Funding.Cat[[i]] <- categorize_school_funding(adequacy_values)
+}
+
+# Verify the new categorical variables
+str(sub.imp$imp$School.Funding.Cat)
+
 ```
 
 ## Q1
@@ -90,7 +113,10 @@ lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Househol
               family="binomial")
 summary(lmod)
 
-with(sub.imp, glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, family="binomial"))
+```
+
+```{r}
+with(sub.imp, lmod, family="binomial")
 
 #Outcome = School.Funding.Cat
 #Predictors = residential segregation, median.household.income, median.prop.tax
