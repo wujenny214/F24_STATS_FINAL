@@ -79,7 +79,52 @@ mlr.imp.mod2 <- with(sub.imp, lm(Life.Expectancy ~ Residential.Segregation.Index
 summary(pool(mlr.imp.mod2))
 ```
 
-@ UZO: Add plots to check assumptions: QQ plot, nested F-test, write p-value interpretations, VIF, Cooks distance
+\@ UZO: Add plots to check assumptions: QQ plot, nested F-test, write p-value interpretations, VIF, Cooks distance
+
+```{r}
+#QQPlot
+qqnorm(residuals(mlrmodel))
+qqline(residuals(mlrmodel), col = "red") 
+```
+
+```{r}
+##Nested F-Test
+#Assuming we will drop %Uninsured Adults Predictor
+
+#print(colnames(combined))
+reduced_model <- lm(Life.Expectancy ~ Residential.Segregation.Index + X..Limited.Access.to.Healthy.Foods, data = combined) 
+  
+# Nested F-Test
+anova(reduced_model, mlrmodel)
+```
+
+```{r}
+#Cooks Distance 
+cooksd <- cooks.distance(mlrmodel)
+
+# Plot Cook's Distance
+plot(cooksd, main = "Cook's Distance", ylab = "Cook's Distance")
+abline(h = 4/(nrow(data) - length(coef(mlrmodel))), col = "red")  # Threshold line
+
+# Identify Influential Points
+influential <- which(cooksd > 4/(nrow(combined) - length(coef(mlrmodel))))
+print(influential)
+```
+
+```{r}
+#Variance Inflaction Factor (VIF)
+library(car)
+vif(mlrmodel)
+
+```
+
+Results are all slightly greater than one meaning some correlation between factors but not much. Percentage of uninsured adults having the greatest correlation
+
+```{r}
+#Generate 4 Diagnostic Plots at once
+par(mfrow = c(2, 2), mar = c(4,4,2,2))
+plot(mlrmodel)
+```
 
 ## Q2
 
