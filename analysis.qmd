@@ -6,7 +6,7 @@ editor: visual
 
 ## Load Data & Create Factors
 
-```{r, echo= FALSE}
+```{r, echo= FALSE, warning = FALSE}
 library("dplyr")
 library(mice)
 library(sjlabelled)
@@ -42,30 +42,60 @@ sub.imp <- mice(sub, m=5, method="pmm", print=FALSE)
 
 ```{r}
 #Need to convert school funding adequacy imputed values to school funding categorical variable before using in models
-# imputated data has 5 dataframes within a list, need to run a loop for all five datasets to create a categorical variable for each set. 
+# Imputated data has 5 dataframes within a list, need to run a loop for all five datasets to create a categorical variable for each set. 
 
-# Create a function to classify school funding adequacy into categories
-# Create a function to classify school funding adequacy into categories
+sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","X..Limited.Access.to.Healthy.Foods","X..Uninsured.Adults","Median.Household.Income", "School.Funding.Adequacy", "Median.Prop.Tax", "Region_fac"))
+sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice function)
+
+
+# Perform the imputation
+sub$School.Funding.Cat <- ifelse(sub$School.Funding.Adequacy > 0, 1, 0)  # Add the new variable to the dataset
+sub.imp <- mice(sub, m = 5, method = "pmm", print = FALSE)
+
+```
+
+```{r}
+# To create a School.Funding.Categorical variable, create a function and run the loop
+
+# Define the categorization function
 categorize_school_funding <- function(x) {
-  ifelse(x < 50, "Low",
-         ifelse(x < 75, "Medium", "High"))
+  ifelse(x > 0, 1, 0)  # Binary classification
 }
 
-# Create an empty list to store the categorical variables
-sub.imp$imp$School.Funding.Cat <- list()
-
-# Loop over the 5 imputations
+# Loop over the imputations
 for (i in 1:5) {
-  # Access the i-th set of imputed values for School.Funding.Adequacy
-  adequacy_values <- sub.imp$imp$School.Funding.Adequacy[, i]
+  # Extract the imputed values for the i-th dataset
+  imputed_values <- sub.imp$imp$School.Funding.Adequacy[, i]
   
-  # Apply the categorization function
-  sub.imp$imp$School.Funding.Cat[[i]] <- categorize_school_funding(adequacy_values)
+  # Categorize the imputed values
+  categorized_values <- categorize_school_funding(imputed_values)
+  complete_cat <- rep(NA, nrow(sub))  # Initialize with NAs
+  
+  # Get the indices where imputation occurred
+  imp_indices <- which(!is.na(categorized_values))  # Only for imputed values
+
+  # Assign the categorized values to the rows that were imputed
+  complete_cat[imp_indices] <- categorized_values[imp_indices]
+  
+  # Save into the `imp` list of the `sub.imp` object
+  sub.imp$imp$School.Funding.Cat[[i]] <- complete_cat[imp_indices]
 }
+```
 
-# Verify the new categorical variables
-str(sub.imp$imp$School.Funding.Cat)
+```{r}
+long_data <- complete(sub.imp, action = "long", include = TRUE)  # Include original data
 
+
+# Check the structure
+str(long_data)
+
+# Ensure that `School.Funding.Cat` is correctly populated
+long_data$School.Funding.Cat <- ifelse(long_data$School.Funding.Adequacy > 0, 1, 0)
+
+
+if (!".imp" %in% colnames(long_data) || !".id" %in% colnames(long_data)) {
+  stop("`.imp` or `.id` columns are missing in the long data!")
+}
 ```
 
 ## Q1
@@ -102,7 +132,7 @@ mlr.imp.mod2 <- with(sub.imp, lm(Life.Expectancy ~ Residential.Segregation.Index
 summary(pool(mlr.imp.mod2))
 ```
 
-@ UZO: Add plots to check assumptions: QQ plot, nested F-test, write p-value interpretations, VIF, Cooks distance
+\@ UZO: Add plots to check assumptions: QQ plot, nested F-test, write p-value interpretations, VIF, Cooks distance
 
 ```{r}
 #QQPlot
@@ -138,7 +168,6 @@ print(influential)
 #Variance Inflaction Factor (VIF)
 library(car)
 vif(mlrmodel)
-
 ```
 
 Results are all slightly greater than one meaning some correlation between factors but not much. Percentage of uninsured adults having the greatest correlation
@@ -149,21 +178,73 @@ par(mfrow = c(2, 2), mar = c(4,4,2,2))
 plot(mlrmodel)
 ```
 
-
 ## Q2
 
 ```{r}
-#Logistic 
+## Checking to see if the imputated data has a large effect on the outcome 
+
+# Logistic Regression without Imputated Data
+# Outcome = School.Funding.Cat
+# Predictors = residential segregation, median.household.income, median.prop.tax
+
 lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax,
               data=combined,
               family="binomial")
-summary(lmod)
+
+library("modelsummary")
+modelsummary(lmod,
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA)
+
+modelsummary(lmod,
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = TRUE,
+             gof_map=NA)
 
 ```
 
 ```{r}
-with(sub.imp, lmod, family="binomial")
+imp_mods <- with(sub_imp, glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax), family="binomial")
 
-#Outcome = School.Funding.Cat
-#Predictors = residential segregation, median.household.income, median.prop.tax
+modelsummary(pool(imp_mods),
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA)
+
+modelsummary(pool(imp_mods),
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = TRUE,
+             gof_map=NA)
 ```
+
+```{r}
+# Creating the AUC curve
+
+library(caret)
+library(pROC)
+
+set.seed(42)
+train_idx <- sample(1:nrow(long_data), size = 0.7 * nrow(long_data))
+train_data <- long_data[train_idx, ]
+test_data <- long_data[-train_idx, ]
+
+glm_model <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, data = train_data, family = binomial)
+
+# Step 4: Make predictions on the test set
+test_probs <- predict(glm_model, newdata = test_data, type = "response")
+test_pred <- ifelse(test_probs > 0.5, 1, 0)  # Classify based on threshold 0.5
+
+# Step 5: Create a confusion matrix
+conf_matrix <- confusionMatrix(factor(test_pred), factor(test_data$School.Funding.Cat))
+print(conf_matrix)
+```
+
