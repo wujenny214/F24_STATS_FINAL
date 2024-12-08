@@ -62,7 +62,7 @@ sub.imp <- mice(sub, m = 5, method = "pmm", print = FALSE)
 ```
 
 ```{r, echo= FALSE, warning = FALSE}
-# Since we should not imputate on the outcome, but need to imputate the School.Funding.Adequacy variable, we are feeding the School.Funding.Adequecy variable into a ifelse conditional that will replaced the impuated outcome variable. 
+# Since we should not imputate on the outcome, but need to imputate the School.Funding.Adequacy variable, we are feeding the School.Funding.Adequacy variable into a ifelse conditional that will replaced the impuated outcome variable. 
 
 # Define the categorization function
 categorize_school_funding <- function(x) {
@@ -116,15 +116,19 @@ colSums(is.na(completed_data))
 
 mlrmodel <- lm(
   Life.Expectancy ~ Residential.Segregation.Index +
-    X..Limited.Access.to.Healthy.Foods +
-    X..Uninsured.Adults,
+  X..Limited.Access.to.Healthy.Foods +
+  X..Uninsured.Adults +
+  Region_fac,
   data = combined)
 
 # Renaming the output names 
 renamed <- c(
   "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
   "X..Limited.Access.to.Healthy.Foods" = "Access to Healthy Foods",
-  "X..Uninsured.Adults" = "Pct. of Uninsured Adults")
+  "X..Uninsured.Adults" = "Pct. of Uninsured Adults",
+  "Region_facWest" = "Region.W", 
+  "Region_facNortheast" = "Region.NE",
+  "Region_facMidwest" = "Region.MidW")
 
 modelsummary(mlrmodel, fmt = fmt_significant(2),
              coef_rename = renamed, 
