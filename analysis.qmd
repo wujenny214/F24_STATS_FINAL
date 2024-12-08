@@ -34,6 +34,7 @@ library(mice)
 library(sjlabelled)
 library(tidyverse)
 library("modelsummary")
+library(car)
 ```
 
 ```{r,echo= FALSE, warning = FALSE, message=FALSE}
@@ -206,7 +207,6 @@ qqline(residuals(mlrmodel), col = "red")
 ##Nested F-Test
 #Assuming we will drop %Uninsured Adults Predictor
 
-#print(colnames(combined))
 reduced_model <- lm(Life.Expectancy ~ Residential.Segregation.Index + X..Limited.Access.to.Healthy.Foods, data = combined) 
   
 # Nested F-Test
@@ -233,7 +233,7 @@ print(influential)
 
 ```{r}
 #Variance Inflaction Factor (VIF)
-library(car)
+
 vif(mlrmodel)
 ```
 
