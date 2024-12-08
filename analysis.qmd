@@ -1,61 +1,67 @@
 ---
-title: "analysis"
+title: "Understanding the Impact of Socioeconomic and Regional Factors on Health and Educational Outcomes"
+author: "Rishika Randev, Jenny Wu, Uzoma Uwazurike Jr., Shiyue Zhou"
+instructor: "Andrea Lane"
+institution: "Duke University, IDS 702 Data Modeling and Presentation"
 format: html
 editor: visual
+execute:
+  echo: false
+  warning: false
 ---
 
-## Load Data & Create Factors
+## **Abstract**
 
-```{r, echo= FALSE, warning = FALSE}
+## **Introduction**
+
+### Background
+
+### Research Question
+
+### Data Overview
+
+## **Methods**
+
+### Variable Selection
+
+### Exploratory Data Analysis & Data Preprocessing
+
+### Model Fitting & Assessment
+
+```{r, echo= FALSE, warning = FALSE, message=FALSE}
 library("dplyr")
 library(mice)
 library(sjlabelled)
 library(tidyverse)
+library("modelsummary")
+```
 
-
+```{r,echo= FALSE, warning = FALSE, message=FALSE}
 combined <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/combined.csv')
 ```
 
-```{r}
-head(combined)
-```
-
-```{r}
+```{r, echo= FALSE, warning = FALSE}
+# Making the state_fac variable a factor variable for future use
 combined <- combined |> mutate(State_fac = factor(combined$State), Region_fac = factor(combined$Region, levels=c('South', 'West', 'Northeast', 'Midwest')))
 ```
 
-```{r}
-combined <- combined %>% select(-X, -Spending.per.Pupil)
-```
-
-```{r}
-head(combined)
-```
-
-## Imputation
-
-```{r}
-sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","X..Limited.Access.to.Healthy.Foods","X..Uninsured.Adults","Median.Household.Income", "School.Funding.Adequacy", "Median.Prop.Tax", "Region_fac"))
-sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice function)
-sub.imp <- mice(sub, m=5, method="pmm", print=FALSE)
-```
-
-```{r}
-#Need to convert school funding adequacy imputed values to school funding categorical variable before using in models
-# Imputated data has 5 dataframes within a list, need to run a loop for all five datasets to create a categorical variable for each set. 
+```{r, echo= FALSE, warning = FALSE}
+## Imputation Code 
+# In this block, we are looking to use predictive mean matching to combing regression methods nad hot deck imputing to predicted value closest to the predicted value of the observation with missing data we also needed to convert school funding adequacy imputed values to school funding categorical variable before using in models
 
 sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","X..Limited.Access.to.Healthy.Foods","X..Uninsured.Adults","Median.Household.Income", "School.Funding.Adequacy", "Median.Prop.Tax", "Region_fac"))
 sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice function)
 
+# Add School.Funding.Cat to the orginal dataset. Since we do not want to imputate on the categorical outcome variable,  this creation of a variable exists to create the proper dataframe within the imputated data 
+sub$School.Funding.Cat <- ifelse(sub$School.Funding.Adequacy > 0, 1, 0)  
 
 # Perform the imputation
-sub$School.Funding.Cat <- ifelse(sub$School.Funding.Adequacy > 0, 1, 0)  # Add the new variable to the dataset
 sub.imp <- mice(sub, m = 5, method = "pmm", print = FALSE)
 
 ```
 
-```{r}
-# To create a School.Funding.Categorical variable, create a function and run the loop
+```{r, echo= FALSE, warning = FALSE}
+# Since we should not imputate on the outcome, but need to imputate the School.Funding.Adequacy variable, we are feeding the School.Funding.Adequecy variable into a ifelse conditional that will replaced the impuated outcome variable. 
 
 # Define the categorization function
 categorize_school_funding <- function(x) {
@@ -82,57 +88,113 @@ for (i in 1:5) {
 }
 ```
 
-```{r}
-long_data <- complete(sub.imp, action = "long", include = TRUE)  # Include original data
-
+```{r, echo= FALSE, warning = FALSE, include = FALSE }
+# To have a full dataset, we are taking the first imputated dataset R provided and using that as our full dataset sample. 
+completed_data <- complete(sub.imp, 1) 
 
 # Check the structure
-str(long_data)
+str(completed_data)
 
-# Ensure that `School.Funding.Cat` is correctly populated
-long_data$School.Funding.Cat <- ifelse(long_data$School.Funding.Adequacy > 0, 1, 0)
+# Ensure that there are no missing data 
+colSums(is.na(completed_data))
 
-
-if (!".imp" %in% colnames(long_data) || !".id" %in% colnames(long_data)) {
-  stop("`.imp` or `.id` columns are missing in the long data!")
-}
 ```
 
-## Q1
+## Q1 Life Expectancy; MLR
 
-```{r}
-#MLR
-# Outcome = life expectancy #Predictors = residential segregation, limited access to healthy foods, uninsured adults, region_fac as interaction with residential segregation (or any other variable)
+### **Research Question 1: Life Expectancy**
+
+### Model Fitting
+
+```{r, echo= FALSE, warning = FALSE}
+# MLR
+# Outcome = life expectancy 
+# Predictors = residential segregation, limited access to healthy foods, uninsured adults, region_fac as interaction with residential segregation (or any other variable)
+
+# To get a general sense of what the data tells us, we use the orignial dataset with missing values. 
 
 mlrmodel <- lm(
   Life.Expectancy ~ Residential.Segregation.Index +
     X..Limited.Access.to.Healthy.Foods +
     X..Uninsured.Adults,
   data = combined)
-summary(mlrmodel)
+
+# Renaming the output names 
+renamed <- c(
+  "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
+  "X..Limited.Access.to.Healthy.Foods" = "Access to Healthy Foods",
+  "X..Uninsured.Adults" = "Pct. of Uninsured Adults")
+
+modelsummary(mlrmodel, fmt = fmt_significant(2),
+             coef_rename = renamed, 
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA,
+             )
 
 ```
 
-```{r}
+### Regression Results
+
+```{r, echo= FALSE, warning = FALSE}
+# Running a regression with the imputated data to understand the impact of missing data 
+
 mlr.imp.mod <- with(sub.imp, lm(Life.Expectancy ~ Residential.Segregation.Index +
     X..Limited.Access.to.Healthy.Foods +
     X..Uninsured.Adults + 
     Region_fac))
 
-summary(pool(mlr.imp.mod))
+renamed <- c(
+  "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
+  "X..Limited.Access.to.Healthy.Foods" = "Access to Healthy Foods",
+  "X..Uninsured.Adults" = "Pct. of Uninsured Adults",
+  "Region_facWest" = "Region.W", 
+  "Region_facNortheast" = "Region.NE",
+  "Region_facMidwest" = "Region.MidW"
+  )
+
+modelsummary(mlr.imp.mod, fmt = fmt_significant(2),
+             coef_rename = renamed, 
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA,
+             )
 ```
 
-```{r}
+```{r echo= FALSE, warning = FALSE}
+# Running a regression with the interaction term between residential segregation on the regions 
+
 mlr.imp.mod2 <- with(sub.imp, lm(Life.Expectancy ~ Residential.Segregation.Index +
     X..Limited.Access.to.Healthy.Foods +
     X..Uninsured.Adults + 
     Region_fac + 
     Region_fac * Residential.Segregation.Index))
 
-summary(pool(mlr.imp.mod2))
+renamed <- c(
+  "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
+  "X..Limited.Access.to.Healthy.Foods" = "Access to Healthy Foods",
+  "X..Uninsured.Adults" = "Pct. of Uninsured Adults",
+  "Region_facWest" = "Region.W", 
+  "Region_facNortheast" = "Region.NE",
+  "Region_facMidwest" = "Region.MidW", 
+  "Residential.Segregation.Index:Region_facWest" = "RSI * Region.W ", 
+  "Residential.Segregation.Index:Region_facNortheast" = "RSI * Region.NE",
+  "Residential.Segregation.Index:Region_facMidwest" = "RSI * Region.MidW"
+  )
+
+modelsummary(mlr.imp.mod2, fmt = fmt_significant(2),
+             coef_rename = renamed, 
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA,
+             )
+
 ```
 
-\@ UZO: Add plots to check assumptions: QQ plot, nested F-test, write p-value interpretations, VIF, Cooks distance
+### Evaluation & Assessment of Model
 
 ```{r}
 #QQPlot
@@ -149,6 +211,8 @@ reduced_model <- lm(Life.Expectancy ~ Residential.Segregation.Index + X..Limited
   
 # Nested F-Test
 anova(reduced_model, mlrmodel)
+
+
 ```
 
 ```{r}
@@ -159,6 +223,9 @@ cooksd <- cooks.distance(mlrmodel)
 plot(cooksd, main = "Cook's Distance", ylab = "Cook's Distance")
 abline(h = 4/(nrow(data) - length(coef(mlrmodel))), col = "red")  # Threshold line
 
+```
+
+```{r include = FALSE}
 # Identify Influential Points
 influential <- which(cooksd > 4/(nrow(combined) - length(coef(mlrmodel))))
 print(influential)
@@ -178,7 +245,11 @@ par(mfrow = c(2, 2), mar = c(4,4,2,2))
 plot(mlrmodel)
 ```
 
-## Q2
+## Q2 **School Funding Adequacy; GLM**
+
+### **Research Question 2: School Funding Adequacy**
+
+### Model Fitting
 
 ```{r}
 ## Checking to see if the imputated data has a large effect on the outcome 
@@ -192,6 +263,8 @@ lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Househol
               family="binomial")
 
 library("modelsummary")
+
+#log-odds scale
 modelsummary(lmod,
              fmt = fmt_significant(2),
              shape = term ~ model + statistic,
@@ -208,9 +281,12 @@ modelsummary(lmod,
 
 ```
 
-```{r}
-imp_mods <- with(sub_imp, glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax), family="binomial")
+### Regression Results 
 
+```{r}
+imp_mods <- with(sub.imp, glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax), family="binomial")
+
+#log-odds scale
 modelsummary(pool(imp_mods),
              fmt = fmt_significant(2),
              shape = term ~ model + statistic,
@@ -226,25 +302,60 @@ modelsummary(pool(imp_mods),
              gof_map=NA)
 ```
 
+### Evaluation and Assessment of Model
+
 ```{r}
-# Creating the AUC curve
+# Creating the confusion matrix 
 
 library(caret)
 library(pROC)
 
-set.seed(42)
-train_idx <- sample(1:nrow(long_data), size = 0.7 * nrow(long_data))
-train_data <- long_data[train_idx, ]
-test_data <- long_data[-train_idx, ]
+# set.seed(42)
+# train_idx <- sample(1:nrow(long_data), size = 0.5 * nrow(long_data))
+# train_data <- long_data[train_idx, ]
+# test_data <- long_data[-train_idx, ]
 
-glm_model <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, data = train_data, family = binomial)
+t_glm_model <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, data = completed_data, family = binomial)
 
-# Step 4: Make predictions on the test set
-test_probs <- predict(glm_model, newdata = test_data, type = "response")
+# Make predictions on the test set
+test_probs <- predict(t_glm_model, newdata = completed_data, type = "response")
 test_pred <- ifelse(test_probs > 0.5, 1, 0)  # Classify based on threshold 0.5
-
-# Step 5: Create a confusion matrix
-conf_matrix <- confusionMatrix(factor(test_pred), factor(test_data$School.Funding.Cat))
-print(conf_matrix)
 ```
 
+```{r}
+# Create a confusion matrix
+library("caret")
+conf_matrix <- confusionMatrix(factor(test_pred), factor(completed_data$School.Funding.Cat))
+#print(conf_matrix)
+
+library(pander)
+
+# Format and display confusion matrix as a Markdown table
+pander(conf_matrix, caption = "Confusion Matrix")
+
+```
+
+```{r}
+#Creating the AUC curves
+roc_result <- roc(
+  completed_data$School.Funding.Cat,
+  predict(t_glm_model, type = "response"),
+  legacy.axes = TRUE,
+  plot = TRUE,
+  print.thres = 0.5,
+  print.auc = FALSE  # Disable automatic AUC
+)
+
+# Add AUC manually
+text(
+  x = 1.2,  # Adjust X-coordinate
+  y = 1,  # Adjust Y-coordinate
+  labels = sprintf("AUC = %.3f", auc(roc_result)),  # Add AUC value
+  cex = 1,  # Label size
+  col = "red"  # Label color
+)
+```
+
+```{r}
+
+```
