@@ -211,11 +211,12 @@ cooksd <- cooks.distance(mlr.imp)
 
 # Plot Cook's Distance
 plot(cooksd, main = "Cook's Distance", ylab = "Cook's Distance")
-abline(h = 4/(nrow(data) - length(coef(mlr.imp))), col = "red")  # Threshold line
+abline(h = 4/(nrow(completed_data) - length(coef(mlr.imp))), col = "red")  # Threshold line
+4/(nrow(data) - length(coef(mlr.imp)))
 
 ```
 
-```{r include = FALSE}
+```{r, include = FALSE}
 # Identify Influential Points
 influential <- which(cooksd > 4/(nrow(combined) - length(coef(mlr.imp))))
 print(influential)
@@ -252,7 +253,7 @@ plot(mlr.imp)
 # Outcome = School.Funding.Cat
 # Predictors = residential segregation, median.household.income, median.prop.tax
 
-lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax + Region_fac,
+lmod <- glm(factor(School.Funding.Cat) ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax + Region_fac,
               data=combined,
               family="binomial")
 
