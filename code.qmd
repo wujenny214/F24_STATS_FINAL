@@ -259,14 +259,14 @@ lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Househol
 library("modelsummary")
 
 #log-odds scale
-summary(lmod,
+modelsummary(lmod,
              fmt = fmt_significant(2),
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
              exponentiate = FALSE,
              gof_map=NA)
 
-summary(lmod,
+modelsummary(lmod,
              fmt = fmt_significant(2),
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
@@ -281,14 +281,14 @@ summary(lmod,
 imp_mods <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax + Region_fac, data=completed_data, family="binomial")
 
 #log-odds scale
-summary(imp_mods,
+modelsummary(imp_mods,
              fmt = fmt_significant(2),
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
              exponentiate = FALSE,
              gof_map=NA)
 
-summary(imp_mods,
+modelsummary(imp_mods,
              fmt = fmt_significant(2),
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
