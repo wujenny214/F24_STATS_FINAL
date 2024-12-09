@@ -229,6 +229,8 @@ ggpairs(completed_data, columns = c("Residential.Segregation.Index",
 
 Based on the multiple linear regression results, percentage of uninsured adults, percentage of population with limited access to healthy foods, and region all emerged with statistically significant coefficient values. The interaction term between region and residential segregation, as well as the individual term of residential segregation, were not statistically significant. While percentage of uninsured adults and percentage with limited access to healthy foods were statistically significant, the coefficients themselves indicate very minor impacts on life expectancy (a 1 unit increase in either of these percentages leads to average life expectancy decreasing by around 0.05 years). The impact of region on life expectancy, however, was notable: life expectancy is on average 4.17 years higher in the West region compared to the South, 6.7 years higher in the Northeast compared to the South, and 2.41 years higher in the Midwest compared to the South.
 
+\newpage
+
 ```{r, echo= FALSE, warning = FALSE, include=FALSE}
 # MLR
 # Outcome = life expectancy 
@@ -318,7 +320,7 @@ modelsummary(mlr.imp.reduced, fmt = fmt_significant(2),
 
 ```
 
-#### Model Assessment 
+#### Model Assessment
 
 The adjusted R-squared value for the model was around 0.2, indicating that only a small amount of the variability in life expectancy was explained by the predictors in the model. This points to the fact that are a plethora of other socioeconomic and environmental factors that have an effect on life expectancy, and expanding our model to include more of these would have likely yielded a better fit.
 
