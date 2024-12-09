@@ -16,9 +16,31 @@ execute:
 
 ### Background
 
-### Research Question
+Life expectancy and school funding are important indicators of public well-being because they capture fundamental aspects of health, education, and social equity that are essential for the development of individuals and communities. Life expectancy is an important health indicator that reflects not only the overall health of a society, but also its stability, economic resilience, and levels of inequality. For example, differences in life expectancy between regions and socioeconomic groups often reveal systemic inequalities, with marginalized communities experiencing shorter life spans due to limited access to health care, healthy living environments, and economic opportunities. Similarly, adequately funded schools mean that students have equal access to learning opportunities and are an important investment in social mobility. Underfunded schools are often located in economically disadvantaged or segregated areas, exacerbating educational gaps and limiting students’ potential to break the cycle of poverty. These gaps are rooted in systemic inequalities, such as residential segregation, which concentrates poverty, limits access to quality education and health care, and perpetuates income and health disparities across generations. By addressing these inequalities, policymakers can foster fairer, more prosperous communities and ensure that everyone benefits from improved health and education systems. 
+
+### Research Questions
+
+For this purpose, we focus on two key research questions to explore these relationships.  First, we investigate how socioeconomic factors—residential segregation, access to healthy foods, and health insurance coverage—impact average life expectancy. This analysis includes a comparison across different regions to identify variations in the relationship between residential segregation and life expectancy. Second, we evaluate how residential segregation, property taxes, and median household income influence school funding adequacy. This question allows us to assess educational investment disparities among regions with varying economic conditions. The observational unit for this analysis was the U.S. county.
 
 ### Data Overview
+
+The dataset used in this study integrates information from three primary sources. 
+
+The first source was the County Health Rankings & Roadmaps program, associated with the University of Wisconsin Population Health Institute, which provided us with 2024 datasets for all U.S. states. This program consolidates the latest county-level measurements of various population health, economic, demographic, and social factors from the American Community Survey, the USDA Food Environment Atlas, Small Area Income and Poverty Estimates, and other reliable government sources into publicly available datasets every year. Our specific variables of interest were originally collected as part of:
+
+-   National Center for Health Statistics - Natality & Mortality Files, 2019-2021 (average life expectancy)
+
+-   American Community Survey 5-year estimates, 2018-2022 (residential segregation index & median household income)
+
+-   USDA Food Environment Atlas, 2019 (percentage of population with limited access to healthy foods)
+
+-   Small Area Health Insurance Estimates, 2021 (percentage of adults uninsured)
+
+-   School Finance Indicators Database, 2021 (school funding adequacy)
+
+The second source was IPUMS, which provided us with median poverty tax data for every county from 2018-2022.
+
+The third source was the U.S. Census Bureau’s Regions and Divisions of the United States, which maps every U.S. to one of our geographic regions, and also a division within the regions. We specifically included regions as a variable in this analysis. This data was loaded into R using a publicly available GitHub repository maintained by Halpert (2014), titled Census Regions. This repository provides the necessary mappings in CSV format, allowing for efficient integration of regional classification data.
 
 ## **Methods**
 
@@ -26,7 +48,25 @@ execute:
 
 ### Exploratory Data Analysis & Data Preprocessing
 
+2024 datasets for all U.S. states were combined and merged with median property tax and region mapping data, resulting in a final dataset with 3144 county observations and 9 different variables (state, average life expectancy, residential segregation index, % limited access to healthy foods, % uninsured adults, school funding adequacy, median household income, median property tax, and region). Because school funding adequacy was given as a numerical value, and we wanted to focus simply on better understanding the dichotomy between school funding adequacy and inadequacy, it was converted into a binary categorical variable (1 if the numerical value was positive, indicating the counties’ schools were adequately funded, and 0 if the numerical value was negative, indicating underfunding).
+
+Exploratory data analysis for the two outcome variables was conducted by creating  . During exploratory data analysis, we found that ⅓ of our observations were missing residential segregation index data, and in addition, certain states were missing nearly all of their segregation values. Because of this, we decided to drop all states missing over 50% of their values for any variable. Going forward, our analysis is limited to 33 states, and excludes the following: Alaska, Colorado, Idaho, Iowa, Kansas, Minnesota, Montana, Nebraska, North Dakota, South Dakota, Utah, Wyoming, and Vermont. We were left with 2379 total observations, and the missing percentage for residential segregation dropped to 22%.
+
+After this, remaining missing values in all variables were imputed using the mice package and predictive mean matching to generate one complete dataset. The original school funding adequacy numerical variable was first imputed, and then converted into binary values for subsequent analysis.
+
 ### Model Fitting & Assessment
+
+For our first research question, a multiple linear regression model was fit, regressing average life expectancy on residential segregation index, % limited access to healthy foods, % uninsured adults, and region. Linear regression assumptions were assessed using diagnostic plots, especially residual vs. fitted and quantile-quantile plots. The adjusted R-squared value was used to evaluate the fit of the model, and the effect of region as an interaction with residential segregation was evaluated using nested F tests. We also calculated VIF to understand multicollinearity and Cook’s distance to identify influential points. 
+
+For our second research question, a binary logistic regression model was fit with school funding adequacy (categorical) as the outcome and residential segregation index, median property tax, and median household income as predictors. The model was assessed using a confusion matrix. ROC curve, and deviance.
+
+## Results
+
+### Data Overview
+
+### Question 1
+
+### Question 2
 
 ```{r, echo= FALSE, warning = FALSE, message=FALSE}
 library("dplyr")
@@ -48,7 +88,7 @@ combined <- combined |> mutate(State_fac = factor(combined$State), Region_fac = 
 
 ```{r, echo= FALSE, warning = FALSE}
 ## Imputation Code 
-# In this block, we are looking to use predictive mean matching to combing regression methods nad hot deck imputing to predicted value closest to the predicted value of the observation with missing data we also needed to convert school funding adequacy imputed values to school funding categorical variable before using in models
+# In this block, we are looking to use predictive mean matching to combing regression methods and hot deck imputing to predicted value closest to the predicted value of the observation with missing data; we also needed to convert school funding adequacy imputed values to school funding categorical variable before using in models
 
 sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","X..Limited.Access.to.Healthy.Foods","X..Uninsured.Adults","Median.Household.Income", "School.Funding.Adequacy", "Median.Prop.Tax", "Region_fac"))
 sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice function)
@@ -57,12 +97,12 @@ sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice functio
 sub$School.Funding.Cat <- ifelse(sub$School.Funding.Adequacy > 0, 1, 0)  
 
 # Perform the imputation
-sub.imp <- mice(sub, m = 5, method = "pmm", print = FALSE)
+sub.imp <- mice(sub, m = 1, method = "pmm", print = FALSE)
 
 ```
 
 ```{r, echo= FALSE, warning = FALSE}
-# Since we should not imputate on the outcome, but need to imputate the School.Funding.Adequacy variable, we are feeding the School.Funding.Adequacy variable into a ifelse conditional that will replaced the impuated outcome variable. 
+# Since we should not imputate on the outcome, but need to imputate the School.Funding.Adequacy variable, we are feeding the School.Funding.Adequacy variable into a ifelse conditional that will replaced the imputed outcome variable. 
 
 # Define the categorization function
 categorize_school_funding <- function(x) {
@@ -70,7 +110,7 @@ categorize_school_funding <- function(x) {
 }
 
 # Loop over the imputations
-for (i in 1:5) {
+for (i in 1:1) {
   # Extract the imputed values for the i-th dataset
   imputed_values <- sub.imp$imp$School.Funding.Adequacy[, i]
   
@@ -90,7 +130,7 @@ for (i in 1:5) {
 ```
 
 ```{r, echo= FALSE, warning = FALSE, include = FALSE }
-# To have a full dataset, we are taking the first imputated dataset R provided and using that as our full dataset sample. 
+# To have a full dataset, we are taking the first imputed dataset R provided and using that as our full dataset sample. 
 completed_data <- complete(sub.imp, 1) 
 
 # Check the structure
@@ -105,7 +145,7 @@ colSums(is.na(completed_data))
 
 ### **Research Question 1: Life Expectancy**
 
-### Model Fitting
+### Model Fitting (Original Data)
 
 ```{r, echo= FALSE, warning = FALSE}
 # MLR
@@ -140,7 +180,7 @@ modelsummary(mlrmodel, fmt = fmt_significant(2),
 
 ```
 
-### Regression Results
+### Model Fitting (Imputed Data)
 
 ```{r, echo= FALSE, warning = FALSE}
 # Running a regression with the imputated data to understand the impact of missing data 
@@ -159,7 +199,7 @@ renamed <- c(
   "Region_facMidwest" = "Region.MidW"
   )
 
-modelsummary(mlr.imp.mod, fmt = fmt_significant(2),
+modelsummary(pool(mlr.imp.mod), fmt = fmt_significant(2),
              coef_rename = renamed, 
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
@@ -189,7 +229,7 @@ renamed <- c(
   "Residential.Segregation.Index:Region_facMidwest" = "RSI * Region.MidW"
   )
 
-modelsummary(mlr.imp.mod2, fmt = fmt_significant(2),
+modelsummary(pool(mlr.imp.mod2), fmt = fmt_significant(2),
              coef_rename = renamed, 
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
@@ -285,7 +325,7 @@ modelsummary(lmod,
 
 ```
 
-### Regression Results 
+### Regression Results
 
 ```{r}
 imp_mods <- with(sub.imp, glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax), family="binomial")

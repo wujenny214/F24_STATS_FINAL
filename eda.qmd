@@ -1,0 +1,40 @@
+---
+title: "eda"
+format: html
+editor: visual
+---
+
+```{r load-packages, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(patchwork)
+```
+
+```{r}
+combined <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/combined.csv')
+```
+
+```{r}
+summary(combined)
+```
+
+|                 | **Average Life Expectancy (years)** |
+|-----------------|-------------------------------------|
+| Min             | 65                                  |
+| 25th percentile | 73                                  |
+| Median          | 75                                  |
+| 75th percentile | 77                                  |
+| Max             | 99                                  |
+| Mean            | 75                                  |
+
+|             |               |           |          |
+|-------------|---------------|-----------|----------|
+| **Midwest** | **Northeast** | **South** | **East** |
+| 552         | 203           | 1421      | 203      |
+
+|                      |                           |
+|----------------------|---------------------------|
+| **0 (Under Funded)** | **1 (Adequately Funded)** |
+| 1539                 | 809                       |

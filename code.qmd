@@ -1,0 +1,355 @@
+---
+title: "Understanding the Impact of Socioeconomic and Regional Factors on Health and Educational Outcomes"
+author: "Rishika Randev, Jenny Wu, Uzoma Uwazurike Jr., Shiyue Zhou"
+instructor: "Andrea Lane"
+institution: "Duke University, IDS 702 Data Modeling and Presentation"
+format: html
+editor: visual
+execute:
+  echo: false
+  warning: false
+---
+
+### Exploratory Data Analysis & Data Preprocessing
+
+(Rishika will add here)
+
+### Model Fitting & Assessment
+
+```{r, echo= FALSE, warning = FALSE, message=FALSE}
+library("dplyr")
+library(mice)
+library(sjlabelled)
+library(tidyverse)
+library("modelsummary")
+library(car)
+```
+
+```{r,echo= FALSE, warning = FALSE, message=FALSE}
+combined <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/combined.csv')
+```
+
+```{r, warning = FALSE}
+# Making the state_fac variable a factor variable for future use
+combined <- combined |> mutate(State_fac = factor(combined$State), Region_fac = factor(combined$Region, levels=c('South', 'West', 'Northeast', 'Midwest')))
+```
+
+```{r, warning = FALSE}
+## Imputation Code 
+# In this block, we are looking to use predictive mean matching to combing regression methods and hot deck imputing to predicted value closest to the predicted value of the observation with missing data; we also needed to convert school funding adequacy imputed values to school funding categorical variable before using in models
+
+sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","X..Limited.Access.to.Healthy.Foods","X..Uninsured.Adults","Median.Household.Income", "School.Funding.Adequacy", "Median.Prop.Tax", "Region_fac"))
+sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice function)
+
+# Add School.Funding.Cat to the orginal dataset. Since we do not want to imputate on the categorical outcome variable,  this creation of a variable exists to create the proper dataframe within the imputated data 
+sub$School.Funding.Cat <- ifelse(sub$School.Funding.Adequacy > 0, 1, 0)  
+
+# Perform the imputation
+sub.imp <- mice(sub, m = 1, method = "pmm", print = FALSE)
+
+```
+
+```{r, warning = FALSE}
+# Since we should not imputate on the outcome, but need to imputate the School.Funding.Adequacy variable, we are feeding the School.Funding.Adequacy variable into a ifelse conditional that will replaced the imputed outcome variable. 
+
+# Define the categorization function
+categorize_school_funding <- function(x) {
+  ifelse(x > 0, 1, 0)  # Binary classification
+}
+
+# Loop over the imputations
+for (i in 1:1) {
+  # Extract the imputed values for the i-th dataset
+  imputed_values <- sub.imp$imp$School.Funding.Adequacy[, i]
+  
+  # Categorize the imputed values
+  categorized_values <- categorize_school_funding(imputed_values)
+  complete_cat <- rep(NA, nrow(sub))  # Initialize with NAs
+  
+  # Get the indices where imputation occurred
+  imp_indices <- which(!is.na(categorized_values))  # Only for imputed values
+
+  # Assign the categorized values to the rows that were imputed
+  complete_cat[imp_indices] <- categorized_values[imp_indices]
+  
+  # Save into the `imp` list of the `sub.imp` object
+  sub.imp$imp$School.Funding.Cat[[i]] <- complete_cat[imp_indices]
+}
+```
+
+```{r, warning = FALSE}
+# To have a full dataset, we are taking the first imputed dataset R provided and using that as our full dataset sample. 
+completed_data <- complete(sub.imp, 1) 
+
+# Check the structure
+str(completed_data)
+
+# Ensure that there are no missing data 
+colSums(is.na(completed_data))
+
+```
+
+## Q1 Life Expectancy; MLR
+
+### **Research Question 1: Life Expectancy**
+
+### Model Fitting (Original Data)
+
+```{r, warning = FALSE}
+# MLR
+# Outcome = life expectancy 
+# Predictors = residential segregation, limited access to healthy foods, uninsured adults, region_fac as interaction with residential segregation (or any other variable)
+
+# To get a general sense of what the data tells us, we use the orignial dataset with missing values. 
+
+mlrmodel <- lm(
+  Life.Expectancy ~ Residential.Segregation.Index * Region_fac +
+  X..Limited.Access.to.Healthy.Foods +
+  X..Uninsured.Adults,
+  data = combined)
+
+# Renaming the output names 
+renamed <- c(
+  "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
+  "X..Limited.Access.to.Healthy.Foods" = "Access to Healthy Foods",
+  "X..Uninsured.Adults" = "Pct. of Uninsured Adults",
+  "Region_facWest" = "Region.W", 
+  "Region_facNortheast" = "Region.NE",
+  "Region_facMidwest" = "Region.MidW")
+
+summary(mlrmodel, fmt = fmt_significant(2),
+             coef_rename = renamed, 
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA,
+             )
+
+```
+
+### Model Fitting (Imputed Data)
+
+test
+
+```{r}
+# Running a regression with the imputated data (completed_data) to understand the impact of missing data
+
+mlr.imp <- lm(Life.Expectancy ~ Residential.Segregation.Index * Region_fac +
+    X..Limited.Access.to.Healthy.Foods +
+    X..Uninsured.Adults, data=completed_data)
+
+renamed <- c(
+  "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
+  "X..Limited.Access.to.Healthy.Foods" = "Access to Healthy Foods",
+  "X..Uninsured.Adults" = "Pct. of Uninsured Adults",
+  "Region_facWest" = "Region.W", 
+  "Region_facNortheast" = "Region.NE",
+  "Region_facMidwest" = "Region.MidW"
+  )
+
+summary(mlr.imp, fmt = fmt_significant(2),
+             coef_rename = renamed, 
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA,
+             )
+```
+
+```{r echo= FALSE, warning = FALSE}
+# Running a regression without the interaction term between residential segregation on the regions 
+
+mlr.imp.reduced <- lm(Life.Expectancy ~ Residential.Segregation.Index +
+    X..Limited.Access.to.Healthy.Foods +
+    X..Uninsured.Adults + 
+    Region_fac, data=completed_data)
+
+renamed <- c(
+  "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
+  "X..Limited.Access.to.Healthy.Foods" = "Access to Healthy Foods",
+  "X..Uninsured.Adults" = "Pct. of Uninsured Adults",
+  "Region_facWest" = "Region.W", 
+  "Region_facNortheast" = "Region.NE",
+  "Region_facMidwest" = "Region.MidW", 
+  "Residential.Segregation.Index:Region_facWest" = "RSI * Region.W ", 
+  "Residential.Segregation.Index:Region_facNortheast" = "RSI * Region.NE",
+  "Residential.Segregation.Index:Region_facMidwest" = "RSI * Region.MidW"
+  )
+
+summary(mlr.imp.reduced, fmt = fmt_significant(2),
+             coef_rename = renamed, 
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA,
+             )
+
+```
+
+FINAL FULL MODEL: mlr.imp
+
+FINAL REDUCED MODEL: mlr.imp.reduced (without region \* segregation interactino)
+
+### Evaluation & Assessment of Model
+
+```{r}
+#QQPlot
+qqnorm(residuals(mlr.imp))
+qqline(residuals(mlr.imp), col = "red") 
+```
+
+```{r}
+##Nested F-Test to see if interaction term makes a difference
+anova(mlr.imp, mlr.imp.reduced)
+
+
+```
+
+```{r}
+#Cooks Distance 
+cooksd <- cooks.distance(mlr.imp)
+
+# Plot Cook's Distance
+plot(cooksd, main = "Cook's Distance", ylab = "Cook's Distance")
+abline(h = 4/(nrow(data) - length(coef(mlr.imp))), col = "red")  # Threshold line
+
+```
+
+```{r include = FALSE}
+# Identify Influential Points
+influential <- which(cooksd > 4/(nrow(combined) - length(coef(mlr.imp))))
+print(influential)
+```
+
+```{r}
+#Variance Inflaction Factor (VIF)
+
+vif(mlr.imp)
+```
+
+```{r}
+vif(mlr.imp.reduced)
+```
+
+Please check first one!!
+
+```{r}
+#Generate 4 Diagnostic Plots at once
+par(mfrow = c(2, 2), mar = c(4,4,2,2))
+plot(mlr.imp)
+```
+
+## Q2 **School Funding Adequacy; GLM**
+
+### **Research Question 2: School Funding Adequacy**
+
+### Model Fitting
+
+```{r}
+## Checking to see if the imputated data has a large effect on the outcome 
+
+# Logistic Regression without Imputated Data
+# Outcome = School.Funding.Cat
+# Predictors = residential segregation, median.household.income, median.prop.tax
+
+lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax,
+              data=combined,
+              family="binomial")
+
+library("modelsummary")
+
+#log-odds scale
+summary(lmod,
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA)
+
+summary(lmod,
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = TRUE,
+             gof_map=NA)
+
+```
+
+### Regression Results
+
+```{r}
+imp_mods <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, data=completed_data, family="binomial")
+
+#log-odds scale
+summary(imp_mods,
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA)
+
+summary(imp_mods,
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = TRUE,
+             gof_map=NA)
+```
+
+### Evaluation and Assessment of Model
+
+```{r}
+# Creating the confusion matrix 
+
+library(caret)
+library(pROC)
+
+# set.seed(42)
+# train_idx <- sample(1:nrow(long_data), size = 0.5 * nrow(long_data))
+# train_data <- long_data[train_idx, ]
+# test_data <- long_data[-train_idx, ]
+
+#t_glm_model <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, data = completed_data, family = binomial)
+
+# Make predictions on the test set
+test_probs <- predict(imp_mods, newdata = completed_data, type = "response")
+test_pred <- ifelse(test_probs > 0.5, 1, 0)  # Classify based on threshold 0.5
+```
+
+```{r}
+# Create a confusion matrix
+library("caret")
+conf_matrix <- confusionMatrix(factor(test_pred), factor(completed_data$School.Funding.Cat))
+#print(conf_matrix)
+
+library(pander)
+
+# Format and display confusion matrix as a Markdown table
+pander(conf_matrix, caption = "Confusion Matrix")
+
+```
+
+```{r}
+#Creating the AUC curves
+roc_result <- roc(
+  completed_data$School.Funding.Cat,
+  predict(imp_mods, type = "response"),
+  legacy.axes = TRUE,
+  plot = TRUE,
+  print.thres = 0.5,
+  print.auc = FALSE  # Disable automatic AUC
+)
+
+# Add AUC manually
+text(
+  x = 1.2,  # Adjust X-coordinate
+  y = 1,  # Adjust Y-coordinate
+  labels = sprintf("AUC = %.3f", auc(roc_result)),  # Add AUC value
+  cex = 1,  # Label size
+  col = "red"  # Label color
+)
+```
+
+```{r}
+
+```
