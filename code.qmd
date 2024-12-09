@@ -252,7 +252,7 @@ plot(mlr.imp)
 # Outcome = School.Funding.Cat
 # Predictors = residential segregation, median.household.income, median.prop.tax
 
-lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax,
+lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax + Region_fac,
               data=combined,
               family="binomial")
 
@@ -278,7 +278,7 @@ summary(lmod,
 ### Regression Results
 
 ```{r}
-imp_mods <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, data=completed_data, family="binomial")
+imp_mods <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax + Region_fac, data=completed_data, family="binomial")
 
 #log-odds scale
 summary(imp_mods,
@@ -351,5 +351,9 @@ text(
 ```
 
 ```{r}
+imp_mods_red <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, data=completed_data, family="binomial")
+
+anova(imp_mods_red, imp_mods, test="Chisq")
+
 
 ```
