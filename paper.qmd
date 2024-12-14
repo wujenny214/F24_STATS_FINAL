@@ -155,15 +155,15 @@ table(completed_data$School.Funding.Cat, completed_data$Region_fac)
 
 *Table 1:* *School Funding Adequacy Summary Statistics*
 
-| Variable                                 | **Inadequate School Funding**  | **Adequate School Funding**  |
-|------------------------------------------|--------------------------------|------------------------------|
-| Residential Segregation Index: Mean (SD) | 46 (17)                        | 56 (14)                      |
-| Region-West: Count (%)                   | 114 (7.3%)                     | 89 (10.8%)                   |
-| Region-Northeast: Count (%)              | 3 (0.2%)                       | 200 (24.3%)                  |
-| Region-Midwest: Count (%)                | 267 (17.1%)                    | 285 (34.7%)                  |
-| Region-South: Count (%)                  | 1173 (75.3%)                   | 248 (30.2%)                  |
-| Median Property Tax, USD: Mean (SD)      | 1119 (763)                     | 2282 (1648)                  |
-| Median Household Income, USD: Mean (SD)  | 56513 (13200)                  | 72218 (18255)                |
+| Variable                                 | **Inadequate School Funding** | **Adequate School Funding** |
+|-----------------------------|----------------------|---------------------|
+| Residential Segregation Index: Mean (SD) | 46 (17)                       | 56 (14)                     |
+| Region-West: Count (%)                   | 114 (7.3%)                    | 89 (10.8%)                  |
+| Region-Northeast: Count (%)              | 3 (0.2%)                      | 200 (24.3%)                 |
+| Region-Midwest: Count (%)                | 267 (17.1%)                   | 285 (34.7%)                 |
+| Region-South: Count (%)                  | 1173 (75.3%)                  | 248 (30.2%)                 |
+| Median Property Tax, USD: Mean (SD)      | 1119 (763)                    | 2282 (1648)                 |
+| Median Household Income, USD: Mean (SD)  | 56513 (13200)                 | 72218 (18255)               |
 
 ```{r, echo=FALSE}
 library(ggplot2)
@@ -345,6 +345,31 @@ influential <- which(cooksd > 4/(nrow(combined) - length(coef(mlr.imp))))
 print(influential)
 ```
 
+```{r}
+# Remove influential points from the dataset
+combined_no_influential <- combined[-influential, ]
+
+# Refit the model without influential points
+mlr_no_influential <- lm(Life.Expectancy ~ Residential.Segregation.Index * Region_fac + X..Limited.Access.to.Healthy.Foods +X..Uninsured.Adults, data = combined_no_influential)
+
+# Compare the two models
+summary(mlr.imp)  # Original model
+summary(mlr_no_influential)  # Model without influential points
+```
+
+```{r}
+#looking for outliers 
+library(car)
+outlier_points <- outlierTest(mlr.imp)
+print(outlier_points)
+```
+
+```{r}
+outlier_indices <- as.numeric(rownames(outlier_points))  # Extract row indices
+print(outlier_indices)  # View the indices to confirm
+
+```
+
 ```{r, echo=FALSE}
 #Variance Inflaction Factor (VIF)
 
@@ -356,6 +381,11 @@ vif(mlr.imp.reduced)
 #Generate 4 Diagnostic Plots at once
 par(mfrow = c(2, 2), mar = c(4,4,2,2))
 plot(mlr.imp)
+```
+
+```{r}
+par(mfrow = c(2, 2), mar = c(4,4,2,2))
+plot(mlr_no_influential)
 ```
 
 ## Question 2
@@ -504,7 +534,7 @@ Future studies could incorporate more social variables to enhance the analysis a
 *Table A1: Summary Statistics For Numerical Variables*
 
 | Statistic          | Residential Segregation Index (RSI) | Percentage With Limited Access to Healthy Foods | Percentage of Uninsured Adults | Median Household Income, USD | Median Property Tax, USD | Average Life Expectancy |
-|--------------------|-------------------------------------|-------------------------------------------------|--------------------------------|------------------------------|--------------------------|-------------------------|
+|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
 | Min                | 1.0                                 | 0.0                                             | 2.8                            | 28972                        | 0                        | 64.9                    |
 | Median             | 50.3                                | 6.5                                             | 12.6                           | 58623                        | 1173                     | 75.1                    |
 | Mean               | 49.3                                | 8.2                                             | 14.1                           | 61940                        | 1521                     | 75.2                    |
