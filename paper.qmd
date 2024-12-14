@@ -91,19 +91,13 @@ This study examines the relationships between socioeconomic, health, and educati
 
 ## **Introduction**
 
-### Background
+Life expectancy and school funding are important indicators of public well-being because they capture fundamental aspects of health, education, and social equity that are essential for the development of individuals and communities. Life expectancy is an important health indicator that reflects not only the overall health of a society, but also its stability, economic resilience, and levels of inequality. According to "The Root Causes of Health Inequity - Communities in Action" report from the National Institutes of Health, we can infer that differences in life expectancy between regions and socioeconomic groups often reveal systemic inequalities, with marginalized communities experiencing shorter life spans due to limited access to health care, healthy living environments, and economic opportunities.^1^ Similarly, adequately funded schools ensure that students have equal access to learning opportunities, serving as a crucial investment in social mobility. The Stanford Center for Opportunity Policy in Education highlights that "the unequal allocation and inadequate levels of resources in schools and communities \[are\] at the heart of many gaps in student opportunity."^2^ This emphasizes the importance of equitable and adequate school funding in closing opportunity gaps and empowering students from disadvantaged backgrounds to achieve academic and economic success. Consequently, it can be inferred that underfunded schools, often situated in economically disadvantaged or segregated areas, exacerbate educational disparities and limit students' ability to break the cycle of poverty. These gaps are rooted in systemic inequalities, such as residential segregation, which concentrates poverty, limits access to quality education and healthcare, and perpetuates income and health disparities across generations. By addressing these inequalities, policymakers can foster fairer, more prosperous communities and ensure that everyone benefits from improved health and education systems.
 
-Life expectancy and school funding are important indicators of public well-being because they capture fundamental aspects of health, education, and social equity that are essential for the development of individuals and communities. Life expectancy is an important health indicator that reflects not only the overall health of a society, but also its stability, economic resilience, and levels of inequality. For example, differences in life expectancy between regions and socioeconomic groups often reveal systemic inequalities, with marginalized communities experiencing shorter life spans due to limited access to health care, healthy living environments, and economic opportunities. Similarly, adequately funded schools mean that students have equal access to learning opportunities and are an important investment in social mobility. Underfunded schools are often located in economically disadvantaged or segregated areas, exacerbating educational gaps and limiting students’ potential to break the cycle of poverty. Because both of these outcomes are impacted by a complicated web of interactions between socioeconomic, political, and cultural factors, it is vital that we work towards better understanding the most influential out of these, so that policy and community intervention designed to improve life expectancy and school funding can take on a multifaceted, and thus a more effective approach. 
+For this purpose, we focus our analysis on two key research questions.  First, we investigate how socioeconomic factors—residential segregation, access to healthy foods, and health insurance coverage—impact average life expectancy. This analysis includes a comparison across different regions to identify variations in the relationship between residential segregation and life expectancy. Second, we evaluate how residential segregation and region influence school funding adequacy. This question allows us to assess how the racial makeup and geographic location—given that each region of the U.S. is characterized by differing political and cultural norms—affect a county's educational investment. The observational unit for this analysis is the U.S. county.
 
-### Research Questions
+To obtain data on the aforementioned variables, we used three primary sources. 
 
-For this purpose, we focused our analysis on two key research questions.  First, we investigated how socioeconomic factors—residential segregation, access to healthy foods, and health insurance coverage—impact average life expectancy. This analysis included a comparison across different regions to identify variations in the relationship between residential segregation and life expectancy. Second, we evaluated how residential segregation, property taxes, and median household income influence school funding adequacy. This question allowed us to assess educational investment disparities among regions with varying economic conditions. The observational unit for this analysis was the U.S. county.
-
-### Data Overview
-
-The dataset used in this study combined information from three primary sources. 
-
-The first source was the County Health Rankings & Roadmaps program, associated with the University of Wisconsin Population Health Institute, which provided us with 2024 datasets for all U.S. states. This program consolidates the latest county-level measurements of various population health, economic, demographic, and social factors from the American Community Survey, the USDA Food Environment Atlas, Small Area Income and Poverty Estimates, and other reliable government sources into publicly available datasets every year. Our specific variables of interest were originally collected as part of:
+The first source was the County Health Rankings & Roadmaps program,^3^ associated with the University of Wisconsin Population Health Institute, which provided us with 2024 datasets for all U.S. states. This program consolidates the latest county-level measurements of various population health, economic, demographic, and social factors from the American Community Survey, the USDA Food Environment Atlas, Small Area Income and Poverty Estimates, and other reliable government sources into publicly available datasets every year. Our specific variables of interest were originally collected as part of:
 
 -   National Center for Health Statistics - Natality & Mortality Files, 2019-2021 (average life expectancy)
 
@@ -115,60 +109,61 @@ The first source was the County Health Rankings & Roadmaps program, associated w
 
 -   School Finance Indicators Database, 2021 (school funding adequacy)
 
-The second source was IPUMS, which provided us with median poverty tax data for every county from 2018-2022.
+The second source was IPUMS, which provided us with median poverty tax data for every county from 2018-2022.^4^
 
-The third source was the U.S. Census Bureau’s Regions and Divisions of the United States, which maps every U.S. to one of four geographic regions, and also a division within the regions. We specifically included regions as a variable in this analysis. This data was loaded into R using a [publicly available GitHub repository](https://github.com/cphalpert/census-regions) titled *Census Regions*.
+The third source was the U.S. Census Bureau’s Regions and Divisions of the United States, which maps every U.S. to one of four geographic regions, and also a division within the regions. We specifically included regions as a variable in this analysis. This data was loaded into R using a [publicly available GitHub repository](https://github.com/cphalpert/census-regions) titled *Census Regions*.^5^
 
 ## **Methods**
 
 ### Variable Selection
 
-Predictor variables were selected *a priori* based on their perceived relevance to the two outcomes we wanted to better understand: average life expectancy and school funding adequacy. Nutrition and access to quality healthcare are inherently linked to overall well-being. To analyze the extent to which each contributes to improving life expectancy, we included two key predictors: the percentage of the population with limited access to healthy foods and the percentage of uninsured adults in a county. The former is defined by the US Department of Agriculture as "the percentage of the \[county\] population that is low-income and does not live close to a grocery store", where "close" is defined differently for rural and nonrural areas. The latter variable represents the percentage of adults in a county younger than 65 who lack health insurance. We also were interested in seeing how residential segregation would impact life expectancy among these predictors, given existing studies on the negative health effects of segregation, and whether this relationship would exhibit any variations across different regions. This is why we chose to include residential segregation index values. The residential segregation index, used by the County Health Rankings & Roadmaps program, measures how evenly two groups, such as Black and white residents, are distributed across geographic areas, with values ranging from 0 (complete integration) to 100 (complete segregation). 
+Variables of interest were selected *a priori* based on their perceived relevance to the two outcomes we wanted to better understand: average life expectancy and school funding adequacy. While nutrition and access to quality healthcare are inherently linked to general wellbeing, it is worthwhile to assess how influential the environmental and financial aspects of these factors are on our tangible outcome. Therefore, we selected two key predictors for our life expectancy model: the percentage of the population with limited access to healthy foods and the percentage of uninsured adults in a county. The former is defined by the US Department of Agriculture as "the percentage of the \[county\] population that is low-income and does not live close to a grocery store", where "close" is defined differently for rural and nonrural areas.^6^ The latter variable represents the percentage of adults in a county younger than 65 who lack health insurance. We also were interested in seeing how residential segregation would impact life expectancy among these predictors, given existing studies on the negative health effects of segregation, and whether this relationship would exhibit any variations across different regions. This is why we chose to include residential segregation index values. The residential segregation index, used by the County Health Rankings & Roadmaps program, measures how evenly two groups, such as Black and white residents, are distributed across geographic areas, with values ranging from 0 (complete integration) to 100 (complete segregation).^7^ 
 
-School funding adequacy is defined by the County Health Rankings program as "the average dollar gap between actual per-pupil spending and the amount needed for students to achieve national average test scores, considering districts' varying equity-based needs." Because a major source of public school funding is tax revenue, especially property tax, we chose to include this variable as a predictor, along with an indicator of the general economic conditions of a county—median household income. In addition, to explore how race and racial diversity interface with variations in school funding, we selected residential segregation to be a part of this regression as well.
+*Income is known to have a strong relationship with.*^8^
+
+School funding adequacy is defined by the County Health Rankings program as "the average dollar gap between actual per-pupil spending and the amount needed for students to achieve national average test scores, considering districts' varying equity-based needs."^9^ To explore how racial diversity interface with variations in school funding, we selected residential segregation to be a part of this regression. In addition, given that state policy has a large influence on school administration and the determination of school needs, and that states in the same region tend to have similar political leanings and cultural beliefs, we wanted to analyze how much of a relationship exists between region and actual school funding levels.
+
+Because a major source of public school funding is tax revenue, median property tax and median household income were also included in the school funding model as potential confounders. This allowed us to assess whether the effects of segregation and region on funding existed outside of the effects of known economic factors.
 
 ### Exploratory Data Analysis & Data Preprocessing
 
 2024 datasets for all U.S. states were combined and merged with median property tax and region mapping data, resulting in a final dataset with 3144 county observations and 9 different variables (state, average life expectancy, residential segregation index, % limited access to healthy foods, % uninsured adults, school funding adequacy, median household income, median property tax, and region). Because school funding adequacy was given as a numerical value, and we wanted to focus on better understanding the dichotomy between school funding adequacy and inadequacy, this variable was converted into a binary categorical variable (where the value was set to 1 if the numerical value was positive, indicating the counties’ schools were adequately funded, and set to 0 if the numerical value was negative, indicating underfunding).
 
-Exploratory data analysis for the two outcome variables was conducted by 1) creating scatterplots of each individual predictor against the outcome (for life expectancy) and 2) creating pairwise plots between variables (for school funding). During the initial stages of analysis, we found that ⅓ of our observations were missing residential segregation index data, and in addition, certain states were missing nearly all of their segregation values. Because of this, we decided to drop all states missing over 50% of their values for any variable. This led to our analysis being limited to 33 states, and excluding the following: Alaska, Colorado, Idaho, Iowa, Kansas, Minnesota, Montana, Nebraska, North Dakota, South Dakota, Utah, Wyoming, and Vermont. We were left with 2379 total observations, and the missing percentage for residential segregation dropped to 22%.
+Exploratory data analysis for the two outcome variables was conducted by 1) calculating descriptive statistics, 2) creating scatterplots of each individual predictor against the outcome (for life expectancy), and 3) creating pairwise plots between variables (for school funding). During the initial stages of analysis, we found that ⅓ of our observations were missing residential segregation index data, and that certain states were missing nearly all of their segregation values. Because of this, we decided to drop all states missing over 50% of their values for any variable. This led to our analysis being limited to 33 states, and excluding the following: Alaska, Colorado, Idaho, Iowa, Kansas, Minnesota, Montana, Nebraska, North Dakota, South Dakota, Utah, Wyoming, and Vermont. We were left with 2379 total observations, and the missing percentage for residential segregation dropped to 22%.
 
 After this, remaining missing values in all variables were imputed using the mice package and predictive mean matching to generate one complete dataset. The original school funding adequacy numerical variable was first imputed, and then converted into binary values for subsequent analysis.
 
 ### Model Fitting & Assessment
 
-For our first research question, a multiple linear regression model was fit, regressing average life expectancy on residential segregation index, percentage with limited access to healthy foods, percentage uninsured adults, and region. Linear regression assumptions were assessed using diagnostic plots, especially residual vs. fitted and quantile-quantile plots. The adjusted R-squared value was used to evaluate the fit of the model, and the effect of region as an interaction with residential segregation was evaluated using nested F tests. We also calculated VIF to check for multicollinearity and Cook’s distance to identify influential points. 
+For our first research question, a multiple linear regression model was fit, regressing average life expectancy on residential segregation index, percentage with limited access to healthy foods, percentage uninsured adults, region, and median household income. Linear regression assumptions were assessed using diagnostic plots, especially residual vs. fitted and quantile-quantile plots. The adjusted R-squared value was used to evaluate the fit of the model, and the effect of region as an interaction term with residential segregation was evaluated using nested F tests. We also calculated VIF to check for multicollinearity and Cook’s distance to identify influential points. 
 
-For our second research question, a binary logistic regression model was fit with school funding adequacy (categorical) as the outcome and residential segregation index, median property tax, region, and median household income as predictors. The model was assessed using a confusion matrix, an ROC curve, and a comparison of deviance between the full model and a reduced model excluding region as a predictor.
+For our second research question, a binary logistic regression model was fit with school funding adequacy (categorical) as the outcome and residential segregation index, region, median property tax, and median household income as predictors. The model was assessed using a confusion matrix, an ROC curve, and a comparison of deviance between the full model and a reduced model that excluded region as a predictor.
 
 ## Results
 
-### Data Overview
+### *Data Overview*
 
-The below tables display summary statistics on average life expectancy (1) and school funding adequacy (2). Both the median and mean life expectancy were 75 years. School funding adequacy counts show that around 66% of the counties in our analysis had under funded schools.
+Table 1 displays summary statistics for the predictors in the second model, stratified by school funding adequacy. School funding adequacy counts show that around 66% of the counties in our analysis had under funded schools. Additionally, the number of counties per region indicate an imbalance between categories, with the South region being over represented (holding 60% of all counties), and the East and Northeast holding around 9% of the counties each. Table A1 in the Appendix provides summary statistics for all variables, and shows that both the mean and median for life expectancy are approximately 75 years.
 
-|                 | **Average Life Expectancy (years)** |
-|-----------------|-------------------------------------|
-| Min             | 65                                  |
-| 25th percentile | 73                                  |
-| Median          | 75                                  |
-| 75th percentile | 77                                  |
-| Max             | 99                                  |
-| Mean            | 75                                  |
+```{r, echo=FALSE, include=FALSE}
+completed_data |> group_by(School.Funding.Cat) |> summarise(mean(Median.Household.Income), sd(Median.Household.Income), mean(Median.Prop.Tax), sd(Median.Prop.Tax), mean(Residential.Segregation.Index), sd(Residential.Segregation.Index))
+```
 
-|                      |                           |
-|----------------------|---------------------------|
-| **0 (Under Funded)** | **1 (Adequately Funded)** |
-| 1539                 | 806                       |
+```{r, echo=FALSE, include=FALSE}
+table(completed_data$School.Funding.Cat, completed_data$Region_fac)
+```
 
-Additionally, the number of counties per region in this analysis indicate an imbalance between categories, with the South region being over represented (holding 60% of all counties), and the East and Northeast holding around 9% of the counties each.
+*Table 1:* *School Funding Adequacy Summary Statistics*
 
-|             |               |           |          |
-|-------------|---------------|-----------|----------|
-| **Midwest** | **Northeast** | **South** | **East** |
-| 552         | 203           | 1421      | 203      |
-
-As mentioned earlier, EDA for the first research question involved generating scatterplots plotting each numerical predictor plotted against life expectancy, as shown below. The residential segregation index vs. life expectancy plot was also faceted by region to explore whether each region demonstrated a different relationship in these two variables. Because the slopes were largely similar, this suggested that the interaction effect might not be that strong. In general, all three scatterplots demonstrated considerable spread and did not show a very substantial linear relationship between the numerical predictors and average life expectancy.
+| Variable                                 | **Inadequate School Funding**  | **Adequate School Funding**  |
+|------------------------------------------|--------------------------------|------------------------------|
+| Residential Segregation Index: Mean (SD) | 46 (17)                        | 56 (14)                      |
+| Region-West: Count (%)                   | 114 (7.3%)                     | 89 (10.8%)                   |
+| Region-Northeast: Count (%)              | 3 (0.2%)                       | 200 (24.3%)                  |
+| Region-Midwest: Count (%)                | 267 (17.1%)                    | 285 (34.7%)                  |
+| Region-South: Count (%)                  | 1173 (75.3%)                   | 248 (30.2%)                  |
+| Median Property Tax, USD: Mean (SD)      | 1119 (763)                     | 2282 (1648)                  |
+| Median Household Income, USD: Mean (SD)  | 56513 (13200)                  | 72218 (18255)                |
 
 ```{r, echo=FALSE}
 library(ggplot2)
@@ -204,8 +199,6 @@ plot1 + plot2 + plot3 + plot_layout(ncol = 2, nrow=2) +
       plot.title = element_text(hjust=0.5)))
 ```
 
-For the second research question, pairwise plots were generated to show the relationship between predictors (as seen by the scatterplots below), and also to show the relationship between each numerical predictor and the school funding outcome variable (as seen by the density plots below). Points and plots colored in red represent counties where school funding is inadequate (=0), and points and plots colored in blue represent counties where funding is adequate (=1).
-
 ```{r, echo=FALSE}
 ggpairs(completed_data, columns = c("Residential.Segregation.Index", 
                               "Median.Household.Income",
@@ -231,17 +224,17 @@ Based on the multiple linear regression results, percentage of uninsured adults,
 
 \newpage
 
-```{r, echo= FALSE, warning = FALSE, include=FALSE}
+```{r, echo=FALSE, warning = FALSE}
 # MLR
 # Outcome = life expectancy 
-# Predictors = residential segregation, limited access to healthy foods, uninsured adults, region_fac as interaction with residential segregation (or any other variable)
+# Predictors = residential segregation, limited access to healthy foods, uninsured adults, region_fac as interaction with residential segregation (or any other variable), household income
 
 # To get a general sense of what the data tells us, we use the orignial dataset with missing values. 
 
 mlrmodel <- lm(
   Life.Expectancy ~ Residential.Segregation.Index * Region_fac +
   X..Limited.Access.to.Healthy.Foods +
-  X..Uninsured.Adults,
+  X..Uninsured.Adults + Median.Household.Income,
   data = combined)
 
 # Renaming the output names 
@@ -254,9 +247,10 @@ renamed <- c(
   "Region-Midwest"= "Region_facMidwest",
   "RSI*Region-West" = "Residential.Segregation.Index:Region_facWest",
   "RSI*Region-Northeast" = "Residential.Segregation.Index:Region_facNortheast",
-  "RSI*Region-Midwest" = "Residential.Segregation.Index:Region_facMidwest")
+  "RSI*Region-Midwest" = "Residential.Segregation.Index:Region_facMidwest",
+  "Median Household Income" = "Median.Household.Income")
 
-modelsummary(mlrmodel, fmt = fmt_significant(2),
+summary(mlrmodel, fmt = fmt_significant(2),
              coef_rename = renamed, 
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
@@ -271,7 +265,7 @@ modelsummary(mlrmodel, fmt = fmt_significant(2),
 
 mlr.imp <- lm(Life.Expectancy ~ Residential.Segregation.Index * Region_fac +
     X..Limited.Access.to.Healthy.Foods +
-    X..Uninsured.Adults, data=completed_data)
+    X..Uninsured.Adults + Median.Household.Income, data=completed_data)
 
 renamed <- c(
     "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
@@ -282,9 +276,10 @@ renamed <- c(
   "Region_facMidwest"="Region-Midwest" ,
   "Residential.Segregation.Index:Region_facWest" = "RSI*Region-West",
   "Residential.Segregation.Index:Region_facNortheast"= "RSI*Region-Northeast",
-  "Residential.Segregation.Index:Region_facMidwest"="RSI*Region-Midwest")
+  "Residential.Segregation.Index:Region_facMidwest"="RSI*Region-Midwest",
+  "Median Household Income" = "Median.Household.Income")
 
-modelsummary(mlr.imp, fmt = fmt_significant(2),
+summary(mlr.imp, fmt = fmt_significant(2),
              coef_rename = renamed, 
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
@@ -294,11 +289,11 @@ modelsummary(mlr.imp, fmt = fmt_significant(2),
 ```
 
 ```{r echo= FALSE, warning = FALSE, include=FALSE}
-# Running a regression without the interaction term between residential segregation on the regions 
+# Running a regression without the interaction term between residential segregation and region
 
 mlr.imp.reduced <- lm(Life.Expectancy ~ Residential.Segregation.Index +
     X..Limited.Access.to.Healthy.Foods +
-    X..Uninsured.Adults + 
+    X..Uninsured.Adults + Median.Household.Income +
     Region_fac, data=completed_data)
 
 renamed <- c(
@@ -307,10 +302,11 @@ renamed <- c(
   "Percentage of Uninsured Adults"= "X..Uninsured.Adults",
   "Region-West" = "Region_facWest", 
   "Region-Northeast"= "Region_facNortheast",
-  "Region-Midwest"= "Region_facMidwest")
+  "Region-Midwest"= "Region_facMidwest",
+  "Median Household Income" = "Median.Household.Income")
 
 
-modelsummary(mlr.imp.reduced, fmt = fmt_significant(2),
+summary(mlr.imp.reduced, fmt = fmt_significant(2),
              coef_rename = renamed, 
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
@@ -320,44 +316,36 @@ modelsummary(mlr.imp.reduced, fmt = fmt_significant(2),
 
 ```
 
+```{r}
+##Nested F-Test to see if segregation-region interaction term makes a difference
+anova(mlr.imp, mlr.imp.reduced)
+```
+
 #### Model Assessment
 
 The adjusted R-squared value for the model was around 0.2, indicating that only a small amount of the variability in life expectancy was explained by the predictors in the model. This points to the fact that are a plethora of other socioeconomic and environmental factors that have an effect on life expectancy, and expanding our model to include more of these would have likely yielded a better fit.
 
 In conducting diagnostics on the multilinear regression model, we first checked to see if the model meets our assumptions of linearity, independence, normality, and homoscedasticity. The residuals vs. fitted plot showed relatively equal variance and no discernible pattern, meaning that the linearity and homoscedasticity assumptions were reasonably met. In addition, because each observation in the dataset represented a unique county in the U.S., independence can be reasonably assumed. Assessing the Q-Q Plot for normality, the residual distribution was approximately normal, despite a slight divergence on both tails of the plot. Finally, through observing the Residuals vs. Leverage plot (not pictured), we observed only a few points falling near or beyond the Cook’s distance threshold, suggesting that there may be a few influential points that can be seen as significantly impacting the results of the regression. These points could affect the validity of the model. 
 
-With variance inflation factors of roughly less than 2 for all predictors, there was little to no multicollinearity amongst the predictors. Through a nested-f test comparing a full model with a reduced model that excludes the interaction term between region and residential segregation, we concluded that a full model fit the data substantially better. The reduction in RSS in the full model compared to the reduced model was highly significant, indicating that the interaction between region and residential segregation added meaningful explanatory power to the model.
+With variance inflation factors of roughly less than 2 for all predictors, there was little to no multicollinearity among the predictors. Through a nested-f test comparing a full model with a reduced model that excludes the interaction term between region and residential segregation, we concluded that a full model fit the data substantially better. The reduction in RSS in the full model compared to the reduced model was highly significant, indicating that the interaction between region and residential segregation added meaningful explanatory power to the model.
 
-```{r, echo=FALSE, include=FALSE}
-#QQPlot
-qqnorm(residuals(mlr.imp))
-qqline(residuals(mlr.imp), col = "red") 
-```
-
-```{r, echo=FALSE, include=FALSE}
-##Nested F-Test to see if interaction term makes a difference
-anova(mlr.imp, mlr.imp.reduced)
-
-
-```
-
-```{r, include=FALSE, echo=FALSE}
+```{r, echo=FALSE}
 #Cooks Distance 
 cooksd <- cooks.distance(mlr.imp)
 
-# Plot Cook's Distance
+# Plot Cook's Distance. Not sure if this is required or if the fourth plot in diagnostic plot shows the same thing.
 plot(cooksd, main = "Cook's Distance", ylab = "Cook's Distance")
-abline(h = 4/(nrow(data) - length(coef(mlr.imp))), col = "red")  # Threshold line
+abline(h = 4/(nrow(combined) - length(coef(mlr.imp))), col = "red")  # Threshold line
 
 ```
 
-```{r, echo=FALSE, include = FALSE}
+```{r, echo=FALSE}
 # Identify Influential Points
 influential <- which(cooksd > 4/(nrow(combined) - length(coef(mlr.imp))))
 print(influential)
 ```
 
-```{r, echo=FALSE, include=FALSE}
+```{r, echo=FALSE}
 #Variance Inflaction Factor (VIF)
 
 vif(mlr.imp)
@@ -372,13 +360,9 @@ plot(mlr.imp)
 
 ## Question 2
 
-Pivoting to the second research question, we sought to assess the impact residential segregation, median property taxes, the median household income, and the region of which we are assessing has on whether or not a school is adequately funded by using a logistic regression model.
-
 #### Model Results
 
-In holding all other variables constant and using the South region as the baseline category for region, the table below displays the odds ratio results from the logistic regression model. 
-
-While all estimates are statistically significant at the 95% confidence level, exponentiated regression coefficients from the logistic model demonstrate that the level of residential segregation, the median household income, and median property tax of the county have very minimal impacts on the odds of a school being adequately funded.  
+The table below displays the odds ratio results from the logistic regression model for school funding adequacy, with the South as the baseline category for region. While all estimates are statistically significant at the 95% confidence level, exponentiated regression coefficients from the logistic model demonstrate that the level of residential segregation, the median household income, and median property tax of the county have very minimal impacts on the odds of a school being adequately funded.  
 
 Region, however, has a substantial impact on the odds of school funding adequacy.  Being located in the Northeast or the Midwest has the greatest impact on how well the school is funded, with the odds of adequate school funding being over 200 times higher in a Northeast county compared to a Southern county, and the odds of adequate school funding being over 3 times higher in a Northeast county compared to a Southern county, holding all other variables constant. Such disparities across the country are caused by a number of factors, including: (1) capacity - how well off a state is based on its economy and resources, and (2) effort - the states willingness to provide funding for education. Wealthier states with a high fiscal capacity, (typically those in the Northeast), have more funding available to spend on education than states with more limited resources (typically those in the South and the West). 
 
@@ -514,3 +498,39 @@ By analyzing these two research questions, we observed the significant impact of
 Our analysis faced limitations due to missing data, causing our dataset to be restricted to 33 states. Additionally, because The County Health Rankings program consolidates the latest from a variety of governmental sources, most of our variables were pulled from different years between 2018 and 2022; we assumed that trends remained largely consistent between these years, treating time as insignificant, but this may not actually be the case.
 
 Future studies could incorporate more social variables to enhance the analysis and investigate the causal relationships between region and outcomes. Expanding the dataset to include more states and addressing missing data would also provide a more comprehensive understanding.
+
+## **Appendix**
+
+*Table A1: Summary Statistics For Numerical Variables*
+
+| Statistic          | Residential Segregation Index (RSI) | Percentage With Limited Access to Healthy Foods | Percentage of Uninsured Adults | Median Household Income, USD | Median Property Tax, USD | Average Life Expectancy |
+|--------------------|-------------------------------------|-------------------------------------------------|--------------------------------|------------------------------|--------------------------|-------------------------|
+| Min                | 1.0                                 | 0.0                                             | 2.8                            | 28972                        | 0                        | 64.9                    |
+| Median             | 50.3                                | 6.5                                             | 12.6                           | 58623                        | 1173                     | 75.1                    |
+| Mean               | 49.3                                | 8.2                                             | 14.1                           | 61940                        | 1521                     | 75.2                    |
+| Max                | 93.8                                | 62.6                                            | 47.1                           | 167605                       | 9788                     | 98.9                    |
+| Standard Deviation | 16.5                                | 6.9                                             | 6.6                            | 16877.8                      | 1274.7                   | 3.1                     |
+
+```{r}
+summary(completed_data)
+```
+
+## **References**
+
+1.  National Academies of Sciences, Engineering, and Medicine. (2017). *Communities in action: Pathways to health equity.* Washington, DC: The National Academies Press. Retrieved from <https://www.ncbi.nlm.nih.gov/books/NBK425845/>
+
+2.  Stanford Center for Opportunity Policy in Education. (2013.). How to close the opportunity gap: Key policy recommendations. Retrieved from <https://edpolicy.stanford.edu/sites/default/files/Opp%20Gap%20Policy%20Recommendations.pdf>
+
+3.  County Health Rankings & Roadmaps. (n.d.). *About us.* Retrieved December 8, 2024, from <https://www.countyhealthrankings.org/about-us>
+
+4.  \[INSERT IPUMS REF HERE\]
+
+5.  Halpert, C. (2014). Census regions \[GitHub repository\]. GitHub. <https://github.com/cphalpert/census-regions>
+
+6.  USDA. (2022). *Documentation*. Economic Research Service. https://www.ers.usda.gov/data-products/food-access-research-atlas/documentation/
+
+7.  County Health Rankings & Roadmaps. (2024). *Residential segregation - Black/White.* University of Wisconsin Population Health Institute. Retrieved from <https://www.countyhealthrankings.org/health-data/health-factors/social-economic-factors/family-and-social-support/residential-segregation-blackwhite?utm_source=chatgpt.com&year=2024>
+
+8.  Chetty, R., Stepner, M., Abraham, S., Lin, S., Scuderi, B., Turner, N., Bergeron, A., & Cutler, D. (2016). The Association Between Income and Life Expectancy in the United States, 2001-2014. *JAMA*, *315*(16), 1750–1766. https://doi.org/10.1001/jama.2016.4226
+
+9.  County Health Rankings & Roadmaps. (2024). *School funding adequacy.* University of Wisconsin Population Health Institute. Retrieved from <https://www.countyhealthrankings.org/health-data/health-factors/social-economic-factors/education/school-funding-adequacy?utm_source=chatgpt.com&year=2024>
