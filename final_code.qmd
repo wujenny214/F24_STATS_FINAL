@@ -255,9 +255,9 @@ ggpairs(
 ```{r, echo=FALSE}
 #Plot for Q1 EDA
 plot1 <- ggplot(completed_data, aes(x = Residential.Segregation.Index, y = Life.Expectancy, color=Region_fac)) +
-  geom_point(color='black') + geom_smooth(method="lm",se=F) + 
+  geom_point(color='black', size=.5) + geom_smooth(method="lm",se=F) + 
   scale_color_brewer(palette = "Dark2") +
-  labs(x = "Residential Segregation Index", y = "Average Life Expectancy (Years)", color='U.S. Region')+ 
+  labs(x = "Residential Segregation Index", y = "Average Life Expectancy (Yrs)", color='U.S. Region')+ 
   theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
 axis.title.x = element_text(size = 8),
 axis.title.y = element_text(size = 6),
@@ -265,17 +265,17 @@ title=element_text(size=9))
 
 plot2 <- ggplot(completed_data, aes(x = X..Limited.Access.to.Healthy.Foods
 , y = Life.Expectancy)) +
-  geom_point(color='black') + geom_smooth(method="lm",se=F) + 
+  geom_point(color='black', size=0.5) + geom_smooth(method="lm",se=F) + 
   scale_color_brewer(palette = "Dark2") +
-  labs( x = "% Population With Limited Healthy Food Access", y="Average Life Expectancy (Years)") +
+  labs( x = "% Population With Limited Healthy Food Access", y="Average Life Expectancy (Yrs)") +
   theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
         axis.title.x = element_text(size = 8),
         axis.title.y = element_text(size = 6))
 
 plot3 <- ggplot(completed_data, aes(x = X..Uninsured.Adults, y = Life.Expectancy)) +
-  geom_point(color='black') + geom_smooth(method="lm",se=F) + 
+  geom_point(color='black', size=0.5) + geom_smooth(method="lm",se=F) + 
   scale_color_brewer(palette = "Dark2") +
-  labs(x = "% Adult Population Without Health Insurance", y = "Average Life Expectancy (Years)")+ 
+  labs(x = "% Adult Population Without Health Insurance", y = "Average Life Expectancy (Yrs)")+ 
   theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
         axis.title.x = element_text(size = 8),
         axis.title.y = element_text(size = 6))
@@ -285,6 +285,17 @@ plot1 + plot2 + plot3 + plot_layout(ncol = 2, nrow=2) +
                   Life Expectancy Outcome",
                   theme = theme(
       plot.title = element_text(hjust=0.5)))
+```
+
+```{r}
+ggplot(completed_data, aes(x=Region_fac, y = Life.Expectancy)) +
+  geom_boxplot() +
+  labs(x = "U.S. Region", y='Average Life Expectancy (Yrs)', color='U.S. Region', title='County Average Life Expectancy Distribution, Stratified by Region') +
+  #scale_color_hue(labels = c("Inadequate", "Adequate"))+ 
+  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
+axis.title.x = element_text(size = 8),
+axis.title.y = element_text(size = 8),
+title=element_text(size=9))
 ```
 
 ### Question 1 Analysis

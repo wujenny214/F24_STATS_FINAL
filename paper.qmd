@@ -415,6 +415,8 @@ axis.title.y = element_text(size = 8),
 title=element_text(size=9))
 ```
 
+\newpage
+
 *Table 3: Logistic Regression Results For School Funding Adequacy Outcome*
 
 ```{r, echo=FALSE}
