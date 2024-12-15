@@ -1,0 +1,615 @@
+---
+title: "Understanding the Impact of Socioeconomic and Regional Factors on Health and Educational Outcomes"
+author: "Rishika Randev, Jenny Wu, Uzoma Uwazurike Jr., Shiyue Zhou"
+instructor: "Andrea Lane"
+institution: "Duke University, IDS 702 Data Modeling and Presentation"
+format: pdf
+header-includes:
+      - \usepackage{float}
+      - \floatplacement{table}{H}
+fontsize: 10pt
+editor: visual
+execute:
+  echo: false
+  warning: false
+---
+
+```{r, echo= FALSE, warning = FALSE, message=FALSE}
+library("dplyr") 
+library(mice) 
+library(sjlabelled) 
+library(tidyverse) 
+library("modelsummary") 
+library(car)
+library(GGally)
+library(ggplot2)
+library(patchwork)
+library(caret)
+library(pROC)
+library(pander)
+```
+
+## Cleaning
+
+```{r, echo=FALSE}
+# Load necessary library for rename
+library(dplyr)
+library(readxl)
+
+# Vector of all 50 states
+states <- c("Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", 
+            "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", 
+            "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", 
+            "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", 
+            "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", 
+            "New Hampshire", "New Jersey", "New Mexico", "New York", 
+            "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", 
+            "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", 
+            "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", 
+            "West Virginia", "Wisconsin", "Wyoming")
+
+# Vector of desired columns to keep
+desired_cols <- c('FIPS', 'State',  
+                  "Life Expectancy", "Segregation Index...200",
+                  "% Limited Access to Healthy Foods", 
+                  "% Uninsured Adults", 
+                  "Spending per Pupil", "School Funding Adequacy", 
+                  "Median Household Income" ) 
+
+# Base URL
+base_path <- "F24_STATS_FINAL/county_data/"
+
+# Initialize an empty list to store processed data frames
+all_data <- list()
+
+# Loop through each state
+for (state in states) {
+  # Format the state name for URL (replace spaces with %20)
+  state_url <- paste0(base_path, gsub(" ", "\ ", state), ".xlsx")
+
+  # Read the CSV
+  full_data <- read_excel(state_url, sheet="Additional Measure Data", skip=1)
+  
+  # Subset columns
+  subset_data <- full_data[desired_cols]
+  
+  # Rename columns
+  renamed_data <- subset_data %>%
+    rename(
+      "Residential.Segregation.Index" = "Segregation Index...200",
+      "School.Funding.Adequacy" = "School Funding Adequacy"
+    )
+  
+  # Drop the first row
+  processed_data <- renamed_data[-1, ]
+  
+  # Save processed data to the list with a dynamic name
+  all_data[[tolower(state)]] <- processed_data
+}
+
+# Combine all processed data frames into one
+combined <- do.call(rbind, all_data)
+
+#Create categorical variable for school funding adequacy
+combined_pre_merge <- combined |>
+  mutate(
+    School.Funding.Cat = factor(case_when(
+      School.Funding.Adequacy < 0 ~ 'Inadequate', 
+      School.Funding.Adequacy > 0  ~ 'Adequate',
+      TRUE ~ NA
+    ), levels=c('Inadequate', 'Adequate'), labels=c(0, 1)))
+
+#Merge with ACS (property tax) data
+acs <- read.csv("https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/county_data/acs_prop_2.csv")
+combined_pre_merge$FIPS <- as.numeric(combined_pre_merge$FIPS)
+
+merged_df <- full_join(combined_pre_merge, acs, join_by("FIPS" == "fips")) %>%
+  mutate(
+    indicator = case_when(
+      is.na(State) & !is.na(state) ~ "Right Only",  # Row from acs only
+      !is.na(State) & is.na(state) ~ "Left Only",   # Row from combined_pre_merge only
+      !is.na(State) & !is.na(state) ~ "Both"        # Row present in both dfs
+    )
+  )
+
+print(merged_df[merged_df$indicator == "Right Only", ])
+print(merged_df[merged_df$indicator == "Left Only", ])
+#Difference of 8 rows, indicating that there are 8 counties with health data but no property tax data. 
+#Alaska and South Dakota are going to be dropped anyways due to missing residential segregation index data.
+#Looking into the VA county with missing property tax data (51515), it turns out that this county does not have any
+#health data either in the original spreadsheet, but is still recorded as a county. Upon further analysis
+#it was found that this FIPS code corresponded to Bedford City, which was merged into 51519 in 2010. Therefore it was safe to drop.
+
+merged_df <- merged_df[merged_df$FIPS != 51515, ]
+merged_df <- merged_df |> 
+  mutate(
+    Median.Prop.Tax = as.numeric(med_.re_taxes_paid))
+
+intermed_merged = subset(merged_df, select = -c(med_.re_taxes_paid, med_.re_taxes_paid_real, county.1, Location, indicator, county, state) )
+
+#Now merge with regions data
+regions <- read.csv("https://github.com/cphalpert/census-regions/raw/refs/heads/master/us%20census%20bureau%20regions%20and%20divisions.csv")
+final_merged <- left_join(intermed_merged, regions, by = c("State" = "State"))
+final_merged = subset(final_merged, select = -c(State.Code))
+
+
+#Due to substantial missing data in certain states, remove them from the final dataframe
+states_to_exclude <- c('Alaska', 'Colorado', 'Idaho', 'Iowa', 'Kansas', 'Minnesota', 'Montana', 'Nebraska', 'North Dakota', 'South Dakota', 'Utah', 'Wyoming', 'Vermont')
+combined <- final_merged %>%
+  filter(!State %in% states_to_exclude)
+
+# The final data frame `combined` contains all processed state data.
+#write.csv(final, '~/Documents/R\ Course\ Code/F24_STATS_FINAL/combined.csv')
+```
+
+## Imputation
+
+```{r,echo= FALSE, warning = FALSE, message=FALSE}
+#combined <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/combined.csv')
+
+```
+
+```{r, echo= FALSE, warning = FALSE}
+# Making the state_fac variable a factor variable for future use
+combined <- combined |> mutate(State_fac = factor(combined$State), Region_fac = factor(combined$Region, levels=c('South', 'West', 'Northeast', 'Midwest')))
+
+```
+
+```{r, echo= FALSE, warning = FALSE}
+## Imputation Code 
+# In this block, we are looking to use predictive mean matching to combing regression methods and hot deck imputing to predicted value closest to the predicted value of the observation with missing data; we also needed to convert school funding adequacy imputed values to school funding categorical variable before using in models
+
+sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","X..Limited.Access.to.Healthy.Foods","X..Uninsured.Adults","Median.Household.Income", "School.Funding.Adequacy", "Median.Prop.Tax", "Region_fac"))
+sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice function)
+
+# Add School.Funding.Cat to the orginal dataset. Since we do not want to imputate on the categorical outcome variable,  this creation of a variable exists to create the proper dataframe within the imputated data 
+sub$School.Funding.Cat <- ifelse(sub$School.Funding.Adequacy > 0, 1, 0)  
+
+# Perform the imputation
+sub.imp <- mice(sub, m = 1, method = "pmm", print = FALSE, seed=3)
+
+```
+
+```{r, echo= FALSE, warning = FALSE}
+# Since we should not imputate on the outcome, but need to imputate the School.Funding.Adequacy variable, we are feeding the School.Funding.Adequacy variable into a ifelse conditional that will replaced the imputed outcome variable. 
+
+# Define the categorization function
+categorize_school_funding <- function(x) {
+  ifelse(x > 0, 1, 0)  # Binary classification
+}
+
+# Loop over the imputations
+for (i in 1:1) {
+  # Extract the imputed values for the i-th dataset
+  imputed_values <- sub.imp$imp$School.Funding.Adequacy[, i]
+  
+  # Categorize the imputed values
+  categorized_values <- categorize_school_funding(imputed_values)
+  complete_cat <- rep(NA, nrow(sub))  # Initialize with NAs
+  
+  # Get the indices where imputation occurred
+  imp_indices <- which(!is.na(categorized_values))  # Only for imputed values
+
+  # Assign the categorized values to the rows that were imputed
+  complete_cat[imp_indices] <- categorized_values[imp_indices]
+  
+  # Save into the `imp` list of the `sub.imp` object
+  sub.imp$imp$School.Funding.Cat[[i]] <- complete_cat[imp_indices]
+}
+
+```
+
+```{r, echo= FALSE, warning = FALSE, include = FALSE }
+# To have a full dataset, we are taking the first imputed dataset R provided and using that as our full dataset sample. 
+completed_data <- complete(sub.imp, 1) 
+
+# Check the structure
+str(completed_data)
+
+# Ensure that there are no missing data 
+colSums(is.na(completed_data))
+```
+
+## EDA
+
+```{r, echo=FALSE, include=FALSE}
+completed_data |> group_by(School.Funding.Cat) |> summarise(mean(Median.Household.Income), sd(Median.Household.Income), mean(Median.Prop.Tax), sd(Median.Prop.Tax), mean(Residential.Segregation.Index), sd(Residential.Segregation.Index))
+```
+
+```{r, echo=FALSE, include=FALSE}
+table(completed_data$School.Funding.Cat, completed_data$Region_fac)
+```
+
+*Table 1:* *School Funding Adequacy Summary Statistics*
+
+| Variable                                 | **Inadequate School Funding** | **Adequate School Funding** |
+|------------------------------|----------------------|--------------------|
+| Residential Segregation Index: Mean (SD) | 46 (17)                       | 56 (14)                     |
+| Region-West: Count (%)                   | 114 (7.3%)                    | 89 (10.8%)                  |
+| Region-Northeast: Count (%)              | 3 (0.2%)                      | 200 (24.3%)                 |
+| Region-Midwest: Count (%)                | 267 (17.1%)                   | 285 (34.7%)                 |
+| Region-South: Count (%)                  | 1173 (75.3%)                  | 248 (30.2%)                 |
+| Median Property Tax, USD: Mean (SD)      | 1119 (763)                    | 2282 (1648)                 |
+| Median Household Income, USD: Mean (SD)  | 56513 (13200)                 | 72218 (18255)               |
+
+```{r, echo=FALSE}
+# Plot for Q2 EDA
+ggpairs(
+  completed_data,
+  columns = c("Residential.Segregation.Index", "Median.Household.Income", "Median.Prop.Tax"),
+  aes(color = factor(School.Funding.Cat,
+                     labels = c("Inadequate", "Adequate")))
+) +
+  labs(
+    title = "Pairwise Plots of Predictors Colored by School Funding Adequacy",
+    color = "School Funding Adequacy"
+  ) +
+  theme(
+    plot.title = element_text(size = 15, hjust = 0.5),
+    strip.text.x = element_text(size = 5),
+    strip.text.y = element_text(size = 3)
+  )
+
+```
+
+```{r, echo=FALSE}
+#Plot for Q1 EDA
+plot1 <- ggplot(completed_data, aes(x = Residential.Segregation.Index, y = Life.Expectancy, color=Region_fac)) +
+  geom_point(color='black') + geom_smooth(method="lm",se=F) + 
+  scale_color_brewer(palette = "Dark2") +
+  labs(x = "Residential Segregation Index", y = "Average Life Expectancy (Years)", color='U.S. Region')+ 
+  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
+axis.title.x = element_text(size = 8),
+axis.title.y = element_text(size = 6),
+title=element_text(size=9))
+
+plot2 <- ggplot(completed_data, aes(x = X..Limited.Access.to.Healthy.Foods
+, y = Life.Expectancy)) +
+  geom_point(color='black') + geom_smooth(method="lm",se=F) + 
+  scale_color_brewer(palette = "Dark2") +
+  labs( x = "% Population With Limited Healthy Food Access", y="Average Life Expectancy (Years)") +
+  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 6))
+
+plot3 <- ggplot(completed_data, aes(x = X..Uninsured.Adults, y = Life.Expectancy)) +
+  geom_point(color='black') + geom_smooth(method="lm",se=F) + 
+  scale_color_brewer(palette = "Dark2") +
+  labs(x = "% Adult Population Without Health Insurance", y = "Average Life Expectancy (Years)")+ 
+  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 6))
+
+plot1 + plot2 + plot3 + plot_layout(ncol = 2, nrow=2) + 
+  plot_annotation(title = "Relationships Between Predictors and 
+                  Life Expectancy Outcome",
+                  theme = theme(
+      plot.title = element_text(hjust=0.5)))
+```
+
+### Question 1 Analysis
+
+#### Model Results
+
+```{r, echo=FALSE, fig.pos='H'}
+library(ggplot2)
+library(GGally)
+library(patchwork)
+
+ggplot(completed_data, aes(x = Residential.Segregation.Index, y = Life.Expectancy, color=Region_fac)) +
+  geom_point(color='black') + geom_smooth(method="lm",se=F) + 
+  scale_color_brewer(palette = "Dark2") +
+  labs(x = "Residential Segregation Index", y = "Average Life Expectancy (Years)", color='U.S. Region', title='Relationship Between Residential Segregation and Life Expectancy')+ 
+  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
+axis.title.x = element_text(size = 8),
+axis.title.y = element_text(size = 8),
+title=element_text(size=9))
+```
+
+*Table 2: MLR Results For Average Life Expectancy Outcome*
+
+```{r, echo= FALSE, warning = FALSE, fig.pos='H'}
+# Running a regression with the imputated data (completed_data) to understand the impact of missing data
+
+mlr.imp <- lm(Life.Expectancy ~ Residential.Segregation.Index * Region_fac +
+    X..Limited.Access.to.Healthy.Foods +
+    X..Uninsured.Adults + Median.Household.Income, data=completed_data)
+
+renamed <- c(
+    "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
+  "X..Limited.Access.to.Healthy.Foods" = "Percentage With Access to Healthy Foods",
+  "X..Uninsured.Adults"= "Percentage of Uninsured Adults",
+  "Region_facWest"="Region-West", 
+  "Region_facNortheast"="Region-Northeast",
+  "Region_facMidwest"="Region-Midwest" ,
+  "Residential.Segregation.Index:Region_facWest" = "RSI*Region-West",
+  "Residential.Segregation.Index:Region_facNortheast"= "RSI*Region-Northeast",
+  "Residential.Segregation.Index:Region_facMidwest"="RSI*Region-Midwest",
+  "Median Household Income" = "Median.Household.Income")
+
+modelsummary(mlr.imp, fmt = fmt_significant(2),
+             coef_rename = renamed, 
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA,
+             )
+```
+
+```{r echo= FALSE, warning = FALSE}
+# Running a regression without the interaction term between residential segregation and region
+
+mlr.imp.reduced <- lm(Life.Expectancy ~ Residential.Segregation.Index +
+    X..Limited.Access.to.Healthy.Foods +
+    X..Uninsured.Adults + Median.Household.Income +
+    Region_fac, data=completed_data)
+
+renamed <- c(
+   "Residential Segregation Index (RSI)" = "Residential.Segregation.Index",
+  "Percentage With Limited Access to Healthy Foods" = "X..Limited.Access.to.Healthy.Foods",
+  "Percentage of Uninsured Adults"= "X..Uninsured.Adults",
+  "Region-West" = "Region_facWest", 
+  "Region-Northeast"= "Region_facNortheast",
+  "Region-Midwest"= "Region_facMidwest",
+  "Median Household Income" = "Median.Household.Income")
+
+
+modelsummary(mlr.imp.reduced, fmt = fmt_significant(2),
+             coef_rename = renamed, 
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA,
+             )
+
+```
+
+```{r, echo=FALSE}
+##Nested F-Test to see if segregation-region interaction term makes a difference
+anova(mlr.imp, mlr.imp.reduced)
+```
+
+#### Model Assessment
+
+```{r, echo=FALSE}
+completed_data[1180,]
+completed_data_lev <- completed_data[-1180,]
+```
+
+```{r, echo=FALSE}
+#looking for outliers 
+outlier_points <- outlierTest(mlr.imp)
+print(outlier_points)
+outlier_indices <- as.numeric(rownames(outlier_points))  # Extract row indices
+print(outlier_indices)  # View the indices to confirm
+```
+
+```{r, echo=FALSEE}
+#Variance Inflaction Factor (VIF)
+
+#vif(mlr.imp)
+vif(mlr.imp.reduced)
+```
+
+```{r, echo=FALSE}
+#Generate 4 Diagnostic Plots at once
+par(mfrow = c(2, 2), mar = c(4,4,2,2))
+plot(mlr.imp)
+```
+
+```{r, echo= FALSE, warning = FALSE}
+# Running a regression with obs 1180 removed
+
+
+mlr.lev <- lm(Life.Expectancy ~ Residential.Segregation.Index * Region_fac +
+    X..Limited.Access.to.Healthy.Foods +
+    X..Uninsured.Adults + Median.Household.Income, data=completed_data_lev)
+
+renamed <- c(
+    "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
+  "X..Limited.Access.to.Healthy.Foods" = "Percentage With Access to Healthy Foods",
+  "X..Uninsured.Adults"= "Percentage of Uninsured Adults",
+  "Region_facWest"="Region-West", 
+  "Region_facNortheast"="Region-Northeast",
+  "Region_facMidwest"="Region-Midwest" ,
+  "Residential.Segregation.Index:Region_facWest" = "RSI*Region-West",
+  "Residential.Segregation.Index:Region_facNortheast"= "RSI*Region-Northeast",
+  "Residential.Segregation.Index:Region_facMidwest"="RSI*Region-Midwest",
+  "Median Household Income" = "Median.Household.Income")
+
+modelsummary(mlr.lev, fmt = fmt_significant(2),
+             coef_rename = renamed, 
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA,
+             )
+```
+
+```{r, echo=FALSE}
+plot(mlr.lev)
+```
+
+## Question 2
+
+#### Model Results
+
+```{r, echo=FALSE}
+## Checking to see if the imputated data has a large effect on the outcome 
+
+# Logistic Regression without Imputated Data
+# Outcome = School.Funding.Cat
+# Predictors = residential segregation, median.household.income, median.prop.tax
+
+lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax + Region_fac,
+              data=combined,
+              family="binomial")
+
+
+
+#log-odds scale
+modelsummary(lmod,
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA)
+
+modelsummary(lmod,
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = TRUE,
+             gof_map=NA)
+
+```
+
+```{r, echo=FALSE}
+imp_mods <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax + Region_fac, data=completed_data, family="binomial")
+
+#log-odds scale
+modelsummary(imp_mods,
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA)
+```
+
+*Figure 2: Relationship Between Residential Segregation, Region, & School Funding Adequacy*
+
+```{r}
+ggplot(completed_data, aes(x=Region_fac, y = Residential.Segregation.Index, color=factor(School.Funding.Cat))) +
+  geom_boxplot() +
+  labs(x = "U.S. Region", y='Residential Segregation Index', color='School Funding Adequacy', title='Residential Segregation Stratified by Region & School Funding') +
+  scale_color_hue(labels = c("Inadequate", "Adequate"))+ 
+  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
+axis.title.x = element_text(size = 8),
+axis.title.y = element_text(size = 8),
+title=element_text(size=9))
+```
+
+*Table 3: Logistic Regression Results For School Funding Adequacy Outcome*
+
+```{r, echo=FALSE}
+
+renamed <- c(
+    "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
+    "Median.Household.Income"="Median Household Income, USD",
+    "Median.Prop.Tax" = "Median Property Tax, USD",
+  "Region_facWest"="Region-West", 
+  "Region_facNortheast"="Region-Northeast",
+  "Region_facMidwest"="Region-Midwest"
+)
+modelsummary(imp_mods,
+             fmt = fmt_significant(2),
+             shape = term ~ model + statistic,
+             coef_rename = renamed,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = TRUE,
+             gof_map=NA)
+```
+
+#### Model Assessment
+
+```{r, echo=FALSE}
+plot(completed_data$Residential.Segregation.Index, predict(imp_mods), col = completed_data$Region_fac)
+plot(completed_data$Median.Household.Income, predict(imp_mods), col = completed_data$Region_fac)
+plot(completed_data$Median.Prop.Tax, predict(imp_mods), col = completed_data$Region_fac)
+```
+
+```{r, echo=FALSE}
+#Cooks Distance 
+cooksd <- cooks.distance(imp_mods)
+
+# Plot Cook's Distance
+plot(cooksd, main = "Cook's Distance", ylab = "Cook's Distance")
+abline(h = 4/(nrow(completed_data) - length(coef(imp_mods))), col = "red")  # Threshold line
+4/(nrow(data) - length(coef(imp_mods)))
+```
+
+```{r, echo=FALSE}
+vif(imp_mods)
+plot(imp_mods)
+```
+
+```{r, echo=FALSE}
+# Creating the confusion matrix 
+
+
+# set.seed(42)
+# train_idx <- sample(1:nrow(long_data), size = 0.5 * nrow(long_data))
+# train_data <- long_data[train_idx, ]
+# test_data <- long_data[-train_idx, ]
+
+#t_glm_model <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, data = completed_data, family = binomial)
+
+# Make predictions on the test set
+test_probs <- predict(imp_mods, newdata = completed_data, type = "response")
+test_pred <- ifelse(test_probs > 0.5, 1, 0)  # Classify based on threshold 0.5
+```
+
+```{r, echo=FALSE}
+# Create a confusion matrix
+conf_matrix <- confusionMatrix(factor(test_pred), factor(completed_data$School.Funding.Cat))
+#print(conf_matrix)
+
+# Format and display confusion matrix as a Markdown table
+pander(conf_matrix, caption = "Confusion Matrix")
+
+```
+
+```{r, echo=FALSE}
+#Creating the AUC curves
+roc_result <- roc(
+  completed_data$School.Funding.Cat,
+  predict(imp_mods, type = "response"),
+  legacy.axes = TRUE,
+  plot = TRUE,
+  print.thres = 0.5,
+  print.auc = FALSE  # Disable automatic AUC
+)
+
+# Add AUC manually
+text(
+  x = 1.2,  # Adjust X-coordinate
+  y = 1,  # Adjust Y-coordinate
+  labels = sprintf("AUC = %.3f", auc(roc_result)),  # Add AUC value
+  cex = 1,  # Label size
+  col = "red"  # Label color
+)
+```
+
+```{r, echo=FALSE}
+imp_mods_red <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, data=completed_data, family="binomial")
+
+anova(imp_mods_red, imp_mods, test="Chisq")
+```
+
+## **Appendix**
+
+*Table A1: Summary Statistics For All Variables*
+
+```{r, include=FALSE, echo=FALSE}
+renamed_data <- completed_data %>%
+  rename(
+    "Residential Segregation" = Residential.Segregation.Index,
+    "Median Household Income" = Median.Household.Income,
+    "Median Property Tax" = Median.Prop.Tax,
+    "School Funding Adequacy" = School.Funding.Adequacy, 
+    "Life Expectancy" = Life.Expectancy,
+    "% Limited Access, Healthy Foods" = X..Limited.Access.to.Healthy.Foods,
+    "% Uninsured Adults" = X..Uninsured.Adults,
+    "Region" = Region_fac,
+    "School Funding Binary" =School.Funding.Cat)
+
+skim_table <- datasummary_skim(
+  renamed_data,
+  title = "Summary Statistics") 
+
+
+```
+
+## 
+
+## 
