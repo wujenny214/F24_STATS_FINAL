@@ -27,7 +27,6 @@ library(patchwork)
 library(caret)
 library(pROC)
 library(pander)
-library(kableExtra)
 ```
 
 ```{r,echo= FALSE, warning = FALSE, message=FALSE}
@@ -166,15 +165,15 @@ table(completed_data$School.Funding.Cat, completed_data$Region_fac)
 
 *Table 1:* *School Funding Adequacy Summary Statistics*
 
-| Variable | **Inadequate School Funding** | **Adequate School Funding** |
+| Variable                                 | **Inadequate School Funding** | **Adequate School Funding** |
 |------------------------------|----------------------|--------------------|
-| Residential Segregation Index: Mean (SD) | 46 (17) | 56 (14) |
-| Region-West: Count (%) | 114 (7.3%) | 89 (10.8%) |
-| Region-Northeast: Count (%) | 3 (0.2%) | 200 (24.3%) |
-| Region-Midwest: Count (%) | 267 (17.1%) | 285 (34.7%) |
-| Region-South: Count (%) | 1173 (75.3%) | 248 (30.2%) |
-| Median Property Tax, USD: Mean (SD) | 1119 (763) | 2282 (1648) |
-| Median Household Income, USD: Mean (SD) | 56513 (13200) | 72218 (18255) |
+| Residential Segregation Index: Mean (SD) | 46 (17)                       | 56 (14)                     |
+| Region-West: Count (%)                   | 114 (7.3%)                    | 89 (10.8%)                  |
+| Region-Northeast: Count (%)              | 3 (0.2%)                      | 200 (24.3%)                 |
+| Region-Midwest: Count (%)                | 267 (17.1%)                   | 285 (34.7%)                 |
+| Region-South: Count (%)                  | 1173 (75.3%)                  | 248 (30.2%)                 |
+| Median Property Tax, USD: Mean (SD)      | 1119 (763)                    | 2282 (1648)                 |
+| Median Household Income, USD: Mean (SD)  | 56513 (13200)                 | 72218 (18255)               |
 
 ```{r, echo=FALSE, include=FALSE}
 # Plot for Q2 EDA
@@ -353,7 +352,7 @@ plot(mlr.lev)
 
 #### Model Results
 
-Table 3 below displays the odds ratio results from the logistic regression model for school funding adequacy, with the South as the baseline category for the categorical region variable. While all estimates are statistically significant at the 0.05 significance level, exponentiated regression coefficient estimates from the logistic model demonstrate that the level of residential segregation, the median household income, and median property tax of the county have very minimal impacts on the odds of a school being adequately funded. This finding is interesting as looking at Figure 2, we see that across regions, the average racial segregation index is consistent across school funding adequacy categories. 
+Table 3 below displays the odds ratio results from the logistic regression model for school funding adequacy, with the South as the baseline category for the categorical region variable. While all estimates are statistically significant at the 0.05 significance level, exponentiated regression coefficients from the logistic model demonstrate median household income and median property tax of the county have almost no impact on the odds of a school being adequately funded. Our results demonstrate that a one unit increase to the residential segregation index increases the odds of school funding adequacy by 0.02 times, allowing us to conclude that residential segregation has a minimal effect on the odds of the school being adequately funded. Figure 2 demonstrates an interesting trend–each region shows a different relationship between the residential segregation distribution of adequately and inadequately funded schools, pointing to a potential interaction between region and segregation.  
 
 Region, however, has a substantial impact on the odds of school funding adequacy.  Being located in the Northeast or the Midwest has the greatest impact on how well the school is funded, with the odds of adequate school funding being over 200 times higher in a Northeast county compared to a Southern county, and the odds of adequate school funding being over 3 times higher in a Northeast county compared to a Southern county, holding all other variables constant. Such disparities across the country are caused by a number of factors, including: (1) capacity - how well off a state is based on its economy and resources, and (2) effort - the states willingness to provide funding for education. Wealthier states with a high fiscal capacity, (typically those in the Northeast), have more funding available to spend on education than states with more limited resources (typically those in the South and the West). 
 
@@ -525,7 +524,7 @@ Future studies could incorporate additional social variables to enhance the anal
 
 *Table A1: Summary Statistics For All Variables*
 
-```{r}
+```{r, include=FALSE, echo=FALSE}
 renamed_data <- completed_data %>%
   rename(
     "Residential Segregation" = Residential.Segregation.Index,
