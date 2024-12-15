@@ -21,6 +21,13 @@ library(sjlabelled)
 library(tidyverse) 
 library("modelsummary") 
 library(car)
+library(GGally)
+library(ggplot2)
+library(patchwork)
+library(caret)
+library(pROC)
+library(pander)
+library(kableExtra)
 ```
 
 ```{r,echo= FALSE, warning = FALSE, message=FALSE}
@@ -97,7 +104,7 @@ This study examines the relationships between socioeconomic, health, and educati
 
 Life expectancy and school funding are important indicators of public well-being because they capture fundamental aspects of health, education, and social equity that are essential for the development of individuals and communities. Life expectancy is an important health indicator that reflects not only the overall health of a society, but also its stability, economic resilience, and levels of inequality. According to "The Root Causes of Health Inequity - Communities in Action" report from the National Institutes of Health, we can infer that differences in life expectancy between regions and socioeconomic groups often reveal systemic inequalities, with marginalized communities experiencing shorter life spans due to limited access to health care, healthy living environments, and economic opportunities.^1^ Similarly, adequately funded schools ensure that students have equal access to learning opportunities, serving as a crucial investment in social mobility. The Stanford Center for Opportunity Policy in Education highlights that "the unequal allocation and inadequate levels of resources in schools and communities \[are\] at the heart of many gaps in student opportunity."^2^ This emphasizes the importance of equitable and adequate school funding in closing opportunity gaps and empowering students from disadvantaged backgrounds to achieve academic and economic success. Consequently, it can be inferred that underfunded schools, often situated in economically disadvantaged or segregated areas, exacerbate educational disparities and limit students' ability to break the cycle of poverty. These gaps are rooted in systemic inequalities, such as residential segregation, which concentrates poverty, limits access to quality education and healthcare, and perpetuates income and health disparities across generations. By addressing these inequalities, policymakers can foster fairer, more prosperous communities and ensure that everyone benefits from improved health and education systems.
 
-For this purpose, we focus our analysis on two key research questions.  First, we investigate how socioeconomic factors—residential segregation, access to healthy foods, and health insurance coverage—impact average life expectancy. This analysis includes a comparison across different regions to identify variations in the relationship between residential segregation and life expectancy. Second, we evaluate how residential segregation and region influence school funding adequacy. This question allows us to assess how the racial makeup and geographic location—given that each region of the U.S. is characterized by differing political and cultural norms—affect a county's educational investment. The observational unit for this analysis is the U.S. county.
+For this purpose, we focus our analysis on two key research questions. First, we investigate how socioeconomic factors—residential segregation, access to healthy foods, and health insurance coverage—impact average life expectancy. **We seek to answer the question, "What is the impact of residential segregation, access to healthy foods, and health insurance coverage on a county's average life expectancy?".** This analysis includes a comparison across different regions to identify variations in the relationship between residential segregation and life expectancy. Second, we evaluate how residential segregation and region influence school funding adequacy. **We seek the answer the question, "Does residential segregation and region impact the likelihood of a school being adequately funded?"**. This question allows us to assess how the racial makeup and geographic location—given that each region of the U.S. is characterized by differing political and cultural norms—affect a county's educational investment. The observational unit for this analysis is the U.S. county.
 
 To obtain data on the aforementioned variables, we used three primary sources. 
 
@@ -159,6 +166,17 @@ table(completed_data$School.Funding.Cat, completed_data$Region_fac)
 
 *Table 1:* *School Funding Adequacy Summary Statistics*
 
+| Variable | **Inadequate School Funding** | **Adequate School Funding** |
+|----|----|----|
+| Residential Segregation Index: Mean (SD) | 46 (17) | 56 (14) |
+| Region-West: Count (%) | 114 (7.3%) | 89 (10.8%) |
+| Region-Northeast: Count (%) | 3 (0.2%) | 200 (24.3%) |
+| Region-Midwest: Count (%) | 267 (17.1%) | 285 (34.7%) |
+| Region-South: Count (%) | 1173 (75.3%) | 248 (30.2%) |
+| Median Property Tax, USD: Mean (SD) | 1119 (763) | 2282 (1648) |
+| Median Household Income, USD: Mean (SD) | 56513 (13200) | 72218 (18255) |
+
+=======
 | Variable                                 | **Inadequate School Funding** | **Adequate School Funding** |
 |--------------------------------|---------------------|--------------------|
 | Residential Segregation Index: Mean (SD) | 46 (17)                       | 56 (14)                     |
@@ -169,6 +187,26 @@ table(completed_data$School.Funding.Cat, completed_data$Region_fac)
 | Median Property Tax, USD: Mean (SD)      | 1119 (763)                    | 2282 (1648)                 |
 | Median Household Income, USD: Mean (SD)  | 56513 (13200)                 | 72218 (18255)               |
 
+
+```{r}
+# Plot for Q2 EDA
+ggpairs(
+  completed_data,
+  columns = c("Residential.Segregation.Index", "Median.Household.Income", "Median.Prop.Tax"),
+  aes(color = factor(School.Funding.Cat,
+                     labels = c("Inadequate", "Adequate")))
+) +
+  labs(
+    title = "Pairwise Plots of Predictors Colored by School Funding Adequacy",
+    color = "School Funding Adequacy"
+  ) +
+  theme(
+    plot.title = element_text(size = 15, hjust = 0.5),
+    strip.text.x = element_text(size = 5),
+    strip.text.y = element_text(size = 3)
+  )
+
+```
 ### Question 1
 
 #### Model Results
@@ -316,7 +354,6 @@ abline(h = 4/(nrow(combined) - length(coef(mlr.imp))), col = "red")  # Threshold
 
 ```{r, echo=FALSE, include=FALSE}
 #looking for outliers 
-library(car)
 outlier_points <- outlierTest(mlr.imp)
 print(outlier_points)
 outlier_indices <- as.numeric(rownames(outlier_points))  # Extract row indices
@@ -373,9 +410,11 @@ plot(mlr.lev)
 
 #### Model Results
 
-The table below displays the odds ratio results from the logistic regression model for school funding adequacy, with the South as the baseline category for region. While all estimates are statistically significant at the 95% confidence level, exponentiated regression coefficients from the logistic model demonstrate that the level of residential segregation, the median household income, and median property tax of the county have very minimal impacts on the odds of a school being adequately funded.  
+The table below displays the odds ratio results from the logistic regression model for school funding adequacy, with the South as the baseline category for the categorical region variable. While all estimates are statistically significant at the 0.05 significance level, exponentiated regression coefficients from the logistic model demonstrate that the level of residential segregation, the median household income, and median property tax of the county have very minimal impacts on the odds of a school being adequately funded.  
 
 Region, however, has a substantial impact on the odds of school funding adequacy.  Being located in the Northeast or the Midwest has the greatest impact on how well the school is funded, with the odds of adequate school funding being over 200 times higher in a Northeast county compared to a Southern county, and the odds of adequate school funding being over 3 times higher in a Northeast county compared to a Southern county, holding all other variables constant. Such disparities across the country are caused by a number of factors, including: (1) capacity - how well off a state is based on its economy and resources, and (2) effort - the states willingness to provide funding for education. Wealthier states with a high fiscal capacity, (typically those in the Northeast), have more funding available to spend on education than states with more limited resources (typically those in the South and the West). 
+
+In comparing our full model (with predictor variables for residential segregation, median household income, median property tax, and region) to a model with including all of these variables except for region, we found that there is statistical significance in the deviance between the residuals of the full model and reduced. As such, we can conclude that including region as a predictor refines and creates a better fit for our model.
 
 ```{r, echo=FALSE, include=FALSE}
 ## Checking to see if the imputated data has a large effect on the outcome 
@@ -442,15 +481,11 @@ modelsummary(imp_mods,
 
 #### Model Assessment
 
-Evaluating our model, we found that the logistic regression model demonstrated a strong overall performance with an accuracy rate of 80.33%. The model had a high sensitivity of 91%, indicating that it accurately predicted 91% of actual positive cases of inadequate school funding when evaluated on our dataset. However, it had a 60% specificity rate, highlighting it correctly identified cases of adequate school funding only 60% of the time. Moreover, looking at the ROC curve below, the AUC is 0.858, indicating a moderately strong discriminate ability. 
-
-In comparing our full model (with predictor variables for residential segregation, median household income, median property tax, and region) to a model with including all of these variables except for region, we found that there is statistical significance in the deviance between the residuals of the full model and reduced. As such, we can conclude that including region as a predictor refines and creates a better fit for our model.
+Evaluating our model, we found that the logistic regression model demonstrated a strong overall performance with an accuracy rate of 80.33%. The model had a high sensitivity of 91%, indicating that it accurately predicted 91% of actual positive cases of adequate school funding when evaluated on our dataset. However, it had a 60% specificity rate, highlighting it correctly identified cases of adequate school funding only 60% of the time. Moreover, looking at the ROC curve below, the AUC is 0.858, indicating a moderately strong discriminate ability. 
 
 ```{r, echo=FALSE, include=FALSE}
 # Creating the confusion matrix 
 
-library(caret)
-library(pROC)
 
 # set.seed(42)
 # train_idx <- sample(1:nrow(long_data), size = 0.5 * nrow(long_data))
@@ -466,11 +501,8 @@ test_pred <- ifelse(test_probs > 0.5, 1, 0)  # Classify based on threshold 0.5
 
 ```{r, echo=FALSE, include=FALSE}
 # Create a confusion matrix
-library("caret")
 conf_matrix <- confusionMatrix(factor(test_pred), factor(completed_data$School.Funding.Cat))
 #print(conf_matrix)
-
-library(pander)
 
 # Format and display confusion matrix as a Markdown table
 pander(conf_matrix, caption = "Confusion Matrix")
@@ -516,13 +548,14 @@ Future studies could incorporate more social variables to enhance the analysis a
 
 *Table A1: Summary Statistics For Numerical Variables*
 
-| Statistic          | Residential Segregation Index (RSI) | Percentage With Limited Access to Healthy Foods | Percentage of Uninsured Adults | Median Household Income, USD | Median Property Tax, USD | Average Life Expectancy |
-|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
-| Min                | 1.0                                 | 0.0                                             | 2.8                            | 28972                        | 0                        | 64.9                    |
-| Median             | 50.3                                | 6.5                                             | 12.6                           | 58623                        | 1173                     | 75.1                    |
-| Mean               | 49.3                                | 8.2                                             | 14.1                           | 61940                        | 1521                     | 75.2                    |
-| Max                | 93.8                                | 62.6                                            | 47.1                           | 167605                       | 9788                     | 98.9                    |
-| Standard Deviation | 16.5                                | 6.9                                             | 6.6                            | 16877.8                      | 1274.7                   | 3.1                     |
+| Statistic | Residential Segregation Index (RSI) | Percentage With Limited Access to Healthy Foods | Percentage of Uninsured Adults | Median Household Income, USD | Median Property Tax, USD | Average Life Expectancy |
+|----|----|----|----|----|----|----|
+| Min | 1.0 | 0.0 | 2.8 | 28972 | 0 | 64.9 |
+| Median | 50.3 | 6.5 | 12.6 | 58623 | 1173 | 75.1 |
+| Mean | 49.3 | 8.2 | 14.1 | 61940 | 1521 | 75.2 |
+| Max | 93.8 | 62.6 | 47.1 | 167605 | 9788 | 98.9 |
+| Standard Deviation | 16.5 | 6.9 | 6.6 | 16877.8 | 1274.7 | 3.1 |
+
 
 ```{r, include=FALSE, echo=FALSE}
 summary(completed_data)
@@ -536,7 +569,7 @@ summary(completed_data)
 
 3.  County Health Rankings & Roadmaps. (n.d.). *About us.* Retrieved December 8, 2024, from <https://www.countyhealthrankings.org/about-us>
 
-4.  \[INSERT IPUMS REF HERE\]
+4.  Steven Ruggles, Sarah Flood, Matthew Sobek, Daniel Backman, Annie Chen, Grace Cooper, Stephanie Richards, Renae Rodgers, and Megan Schouweiler. IPUMS USA: Version 15.0 \[dataset\]. Minneapolis, MN: IPUMS, 2024. Retrieved from <https://doi.org/10.18128/D010.V15.0>
 
 5.  Halpert, C. (2014). Census regions \[GitHub repository\]. GitHub. <https://github.com/cphalpert/census-regions>
 
