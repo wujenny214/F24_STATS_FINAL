@@ -222,6 +222,8 @@ axis.title.y = element_text(size = 8),
 title=element_text(size=9))
 ```
 
+\newpage
+
 *Table 2: MLR Results For Average Life Expectancy Outcome*
 
 ```{r, echo= FALSE, warning = FALSE, fig.pos='H'}
@@ -373,7 +375,7 @@ lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Househol
 
 #log-odds scale
 modelsummary(lmod,
-             fmt = fmt_significant(2),
+             fmt = fmt_significant(7),
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
              exponentiate = FALSE,
@@ -461,14 +463,6 @@ plot(imp_mods)
 
 ```{r, echo=FALSE, include=FALSE}
 # Creating the confusion matrix 
-
-
-# set.seed(42)
-# train_idx <- sample(1:nrow(long_data), size = 0.5 * nrow(long_data))
-# train_data <- long_data[train_idx, ]
-# test_data <- long_data[-train_idx, ]
-
-#t_glm_model <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, data = completed_data, family = binomial)
 
 # Make predictions on the test set
 test_probs <- predict(imp_mods, newdata = completed_data, type = "response")
