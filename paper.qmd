@@ -165,15 +165,15 @@ table(completed_data$School.Funding.Cat, completed_data$Region_fac)
 
 *Table 1:* *School Funding Adequacy Summary Statistics*
 
-| Variable                                 | **Inadequate School Funding** | **Adequate School Funding** |
+| Variable | **Inadequate School Funding** | **Adequate School Funding** |
 |------------------------------|----------------------|--------------------|
-| Residential Segregation Index: Mean (SD) | 46 (17)                       | 56 (14)                     |
-| Region-West: Count (%)                   | 114 (7.3%)                    | 89 (10.8%)                  |
-| Region-Northeast: Count (%)              | 3 (0.2%)                      | 200 (24.3%)                 |
-| Region-Midwest: Count (%)                | 267 (17.1%)                   | 285 (34.7%)                 |
-| Region-South: Count (%)                  | 1173 (75.3%)                  | 248 (30.2%)                 |
-| Median Property Tax, USD: Mean (SD)      | 1119 (763)                    | 2282 (1648)                 |
-| Median Household Income, USD: Mean (SD)  | 56513 (13200)                 | 72218 (18255)               |
+| Residential Segregation Index: Mean (SD) | 46 (17) | 56 (14) |
+| Region-West: Count (%) | 114 (7.3%) | 89 (10.8%) |
+| Region-Northeast: Count (%) | 3 (0.2%) | 200 (24.3%) |
+| Region-Midwest: Count (%) | 267 (17.1%) | 285 (34.7%) |
+| Region-South: Count (%) | 1173 (75.3%) | 248 (30.2%) |
+| Median Property Tax, USD: Mean (SD) | 1119 (763) | 2282 (1648) |
+| Median Household Income, USD: Mean (SD) | 56513 (13200) | 72218 (18255) |
 
 ```{r, echo=FALSE, include=FALSE}
 # Plot for Q2 EDA
@@ -373,7 +373,7 @@ lmod <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Househol
 
 #log-odds scale
 modelsummary(lmod,
-             fmt = fmt_significant(2),
+             fmt = fmt_significant(7),
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
              exponentiate = FALSE,
@@ -461,14 +461,6 @@ plot(imp_mods)
 
 ```{r, echo=FALSE, include=FALSE}
 # Creating the confusion matrix 
-
-
-# set.seed(42)
-# train_idx <- sample(1:nrow(long_data), size = 0.5 * nrow(long_data))
-# train_data <- long_data[train_idx, ]
-# test_data <- long_data[-train_idx, ]
-
-#t_glm_model <- glm(School.Funding.Cat ~ Residential.Segregation.Index + Median.Household.Income + Median.Prop.Tax, data = completed_data, family = binomial)
 
 # Make predictions on the test set
 test_probs <- predict(imp_mods, newdata = completed_data, type = "response")
