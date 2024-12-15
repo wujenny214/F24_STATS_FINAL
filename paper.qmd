@@ -172,41 +172,20 @@ table(completed_data$School.Funding.Cat, completed_data$Region_fac)
 | Median Property Tax, USD: Mean (SD) | 1119 (763) | 2282 (1648) |
 | Median Household Income, USD: Mean (SD) | 56513 (13200) | 72218 (18255) |
 
-```{r, echo=FALSE}
-plot1 <- ggplot(completed_data, aes(x = Residential.Segregation.Index, y = Life.Expectancy, color=Region_fac)) +
-  geom_point(color='black') + geom_smooth(method="lm",se=F) + 
-  scale_color_brewer(palette = "Dark2") +
-  labs(x = "Residential Segregation Index", y = "Life Expectancy (yrs)", color='Region')+ 
-  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
-axis.title.x = element_text(size = 8),
-axis.title.y = element_text(size = 8))
+=======
+| Variable                                 | **Inadequate School Funding** | **Adequate School Funding** |
+|--------------------------------|---------------------|--------------------|
+| Residential Segregation Index: Mean (SD) | 46 (17)                       | 56 (14)                     |
+| Region-West: Count (%)                   | 114 (7.3%)                    | 89 (10.8%)                  |
+| Region-Northeast: Count (%)              | 3 (0.2%)                      | 200 (24.3%)                 |
+| Region-Midwest: Count (%)                | 267 (17.1%)                   | 285 (34.7%)                 |
+| Region-South: Count (%)                  | 1173 (75.3%)                  | 248 (30.2%)                 |
+| Median Property Tax, USD: Mean (SD)      | 1119 (763)                    | 2282 (1648)                 |
+| Median Household Income, USD: Mean (SD)  | 56513 (13200)                 | 72218 (18255)               |
 
-plot2 <- ggplot(completed_data, aes(x = X..Limited.Access.to.Healthy.Foods
-, y = Life.Expectancy)) +
-  geom_point(color = "black") + geom_smooth(method="lm",se=F)+
-  labs( x = "% Population With Limited Healthy Food Access",y = "Life Expectancy (yrs)") +
-  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
-        axis.title.x = element_text(size = 8),
-        axis.title.y = element_text(size = 8))
-
-plot3 <- ggplot(completed_data, aes(x = X..Uninsured.Adults, y = Life.Expectancy)) +
-  geom_point(color = "black") +geom_smooth(method="lm",se=F)+
-  labs(x = "% Adult Population Without Health Insurance", y = "Life Expectancy (yrs)")+ 
-  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
-        axis.title.x = element_text(size = 8),
-        axis.title.y = element_text(size = 8))
-
-plot1 + plot2 + plot3 + plot_layout(ncol = 2, nrow=2) + 
-  plot_annotation(title = "Relationships Between Predictors and 
-                  Life Expectancy Outcome",
-                  theme = theme(
-      plot.title = element_text(hjust=0.5)))
-```
 
 ```{r}
-library(GGally)
-library(ggplot2)
-
+# Plot for Q2 EDA
 ggpairs(
   completed_data,
   columns = c("Residential.Segregation.Index", "Median.Household.Income", "Median.Prop.Tax"),
@@ -224,16 +203,17 @@ ggpairs(
   )
 
 ```
-
 ### Question 1
 
 #### Model Results
 
-Based on the multiple linear regression results, percentage of uninsured adults, percentage of population with limited access to healthy foods, and region all emerged with statistically significant coefficient values. The interaction term between region and residential segregation, as well as the individual term of residential segregation, were not statistically significant. While percentage of uninsured adults and percentage with limited access to healthy foods were statistically significant, the coefficients themselves indicate very minor impacts on life expectancy (a 1 unit increase in either of these percentages leads to average life expectancy decreasing by around 0.05 years). The impact of region on life expectancy, however, was notable: life expectancy is on average 4.17 years higher in the West region compared to the South, 6.7 years higher in the Northeast compared to the South, and 2.41 years higher in the Midwest compared to the South.
+Based on the multiple linear regression results, residential segregation, percentage of uninsured adults, region, and median household income all emerged with statistically significant effects on life expectancy. However, the coefficients for most of these variables were small. Specifically, holding all other variables constant, for every 1 unit increase in percentage of uninsured adults, a county's average life expectancy increases by 0.032 years, which is surprising and suggests the effect of confounding variables not included in our study like ???. For every \$10,000 increase in median household income, life expectancy increases by 1.25 years on average. The impact of region on life expectancy was notable: life expectancy is on average 1.96 years higher in the West region compared to the South, 2.92 years higher in the Northeast compared to the South, and 1.92 years higher in the Midwest compared to the South, even when controlling for income, uninsured population, and racial diversity. This suggests that potentially the quality of healthcare and public services, which differ substantially from region to region, could be a big driver in life expectancy even outside of income (how to word / explain this better)???
+
+The percentage of population with limited access to healthy foods predictor was not statistically significant, suggesting that this environmental factor may not have an independent effect on life expectancy outside of an economic factor like income. In terms of residential segregation, for every 1 unit increase in a county's index value (corresponding to increased segregation), its average life expectancy increases by 0.0071 years in the South, increases by 0.0068 years in the West, decreases by 0.0055 years in the Northeast, and decreases by 0.0004 years in the Midwest, as seen in Figure 1. However, these differences are not statistically significant given the high p-values of all residential segregation-region interaction terms. We confirmed this result with a nested f-test, comparing a full model to a reduced model that excluded the interaction term between region and residential segregation. This did not show a statistically significant difference in RSS (*p*=0.624), indicating that the interaction between region and residential segregation does not add meaningful explanatory power to our model, and that we did not find enough evidence to support regional variations in the relationship between segregation and life expectancy (???? is this fine???? or am I saying something incorrect???). Instead, based on residential segregation's coefficient estimate in the model, life expectancy does appear to increase overall with an increase in residential segregation, however minor this increase may be.
 
 \newpage
 
-```{r, echo=FALSE, warning = FALSE}
+```{r, echo=FALSE, warning = FALSE, include=FALSE}
 # MLR
 # Outcome = life expectancy 
 # Predictors = residential segregation, limited access to healthy foods, uninsured adults, region_fac as interaction with residential segregation (or any other variable), household income
@@ -259,7 +239,7 @@ renamed <- c(
   "RSI*Region-Midwest" = "Residential.Segregation.Index:Region_facMidwest",
   "Median Household Income" = "Median.Household.Income")
 
-summary(mlrmodel, fmt = fmt_significant(2),
+modelsummary(mlrmodel, fmt = fmt_significant(2),
              coef_rename = renamed, 
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
@@ -268,6 +248,8 @@ summary(mlrmodel, fmt = fmt_significant(2),
              )
 
 ```
+
+*Table 2: MLR Results For Average Life Expectancy Outcome*
 
 ```{r, echo= FALSE, warning = FALSE}
 # Running a regression with the imputated data (completed_data) to understand the impact of missing data
@@ -288,7 +270,7 @@ renamed <- c(
   "Residential.Segregation.Index:Region_facMidwest"="RSI*Region-Midwest",
   "Median Household Income" = "Median.Household.Income")
 
-summary(mlr.imp, fmt = fmt_significant(2),
+modelsummary(mlr.imp, fmt = fmt_significant(2),
              coef_rename = renamed, 
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
@@ -315,7 +297,7 @@ renamed <- c(
   "Median Household Income" = "Median.Household.Income")
 
 
-summary(mlr.imp.reduced, fmt = fmt_significant(2),
+modelsummary(mlr.imp.reduced, fmt = fmt_significant(2),
              coef_rename = renamed, 
              shape = term ~ model + statistic,
              statistic = c("std.error","conf.int","p.value"),
@@ -325,20 +307,38 @@ summary(mlr.imp.reduced, fmt = fmt_significant(2),
 
 ```
 
-```{r}
+```{r, include=FALSE, echo=FALSE}
 ##Nested F-Test to see if segregation-region interaction term makes a difference
 anova(mlr.imp, mlr.imp.reduced)
 ```
 
-#### Model Assessment
-
-The adjusted R-squared value for the model was around 0.2, indicating that only a small amount of the variability in life expectancy was explained by the predictors in the model. This points to the fact that are a plethora of other socioeconomic and environmental factors that have an effect on life expectancy, and expanding our model to include more of these would have likely yielded a better fit.
-
-In conducting diagnostics on the multilinear regression model, we first checked to see if the model meets our assumptions of linearity, independence, normality, and homoscedasticity. The residuals vs. fitted plot showed relatively equal variance and no discernible pattern, meaning that the linearity and homoscedasticity assumptions were reasonably met. In addition, because each observation in the dataset represented a unique county in the U.S., independence can be reasonably assumed. Assessing the Q-Q Plot for normality, the residual distribution was approximately normal, despite a slight divergence on both tails of the plot. Finally, through observing the Residuals vs. Leverage plot (not pictured), we observed only a few points falling near or beyond the Cook’s distance threshold, suggesting that there may be a few influential points that can be seen as significantly impacting the results of the regression. These points could affect the validity of the model. 
-
-With variance inflation factors of roughly less than 2 for all predictors, there was little to no multicollinearity among the predictors. Through a nested-f test comparing a full model with a reduced model that excludes the interaction term between region and residential segregation, we concluded that a full model fit the data substantially better. The reduction in RSS in the full model compared to the reduced model was highly significant, indicating that the interaction between region and residential segregation added meaningful explanatory power to the model.
+*Figure 1: Segregation & Life Expectancy Across Different U.S. Regions*
 
 ```{r, echo=FALSE}
+library(ggplot2)
+library(GGally)
+library(patchwork)
+
+ggplot(completed_data, aes(x = Residential.Segregation.Index, y = Life.Expectancy, color=Region_fac)) +
+  geom_point(color='black') + geom_smooth(method="lm",se=F) + 
+  scale_color_brewer(palette = "Dark2") +
+  labs(x = "Residential Segregation Index", y = "Average Life Expectancy (Years)", color='U.S. Region', title='Relationship Between Residential Segregation and Life Expectancy')+ 
+  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
+axis.title.x = element_text(size = 8),
+axis.title.y = element_text(size = 8),
+title=element_text(size=9))
+```
+
+#### Model Assessment
+
+The adjusted R-squared value for the model was 0.6065, indicating that a majority of the variability in life expectancy was explained by the socioeconomic and racial predictors included the model. In conducting diagnostics on the multilinear regression model, we first checked to see if the model met assumptions of linearity, independence, normality, and homoscedasticity. The residuals vs. fitted plot showed relatively equal variance and no discernible pattern, meaning that the linearity and homoscedasticity assumptions were reasonably met. In addition, because each observation in the dataset represented a unique county in the U.S., independence could be reasonably assumed. Assessing the Q-Q Plot for normality, the residual distribution was approximately normal, despite a slight divergence on both tails of the plot. Cook's distance was also assessed using the residuals vs. leverage plot; no points were found to be influential. There was a high leverage point (Mineral County, Nevada), and refitting the model without this point yielded no substantial changes in the coefficient estimates for statistically significant predictors; however, the p-value for residential segregation increased from 0.031 to 0.054. Finally, with a VIF \<2 for all predictors, there was little to no multicollinearity among the predictors.
+
+```{r, echo=FALSE, include=FALSE}
+completed_data[1180,]
+completed_data_lev <- completed_data[-1180,]
+```
+
+```{r, echo=FALSE, include=FALSE}
 #Cooks Distance 
 cooksd <- cooks.distance(mlr.imp)
 
@@ -348,52 +348,58 @@ abline(h = 4/(nrow(combined) - length(coef(mlr.imp))), col = "red")  # Threshold
 
 ```
 
-```{r, echo=FALSE}
-# Identify Influential Points
-influential <- which(cooksd > 4/(nrow(combined) - length(coef(mlr.imp))))
-print(influential)
-```
-
-```{r}
-# Remove influential points from the dataset
-combined_no_influential <- combined[-influential, ]
-
-# Refit the model without influential points
-mlr_no_influential <- lm(Life.Expectancy ~ Residential.Segregation.Index * Region_fac + X..Limited.Access.to.Healthy.Foods +X..Uninsured.Adults, data = combined_no_influential)
-
-# Compare the two models
-summary(mlr.imp)  # Original model
-summary(mlr_no_influential)  # Model without influential points
-```
-
-```{r}
+```{r, echo=FALSE, include=FALSE}
 #looking for outliers 
 outlier_points <- outlierTest(mlr.imp)
 print(outlier_points)
-```
-
-```{r}
 outlier_indices <- as.numeric(rownames(outlier_points))  # Extract row indices
 print(outlier_indices)  # View the indices to confirm
-
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, include=FALSE}
 #Variance Inflaction Factor (VIF)
 
-vif(mlr.imp)
+#vif(mlr.imp)
 vif(mlr.imp.reduced)
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, include=FALSE}
 #Generate 4 Diagnostic Plots at once
 par(mfrow = c(2, 2), mar = c(4,4,2,2))
 plot(mlr.imp)
 ```
 
-```{r}
-par(mfrow = c(2, 2), mar = c(4,4,2,2))
-plot(mlr_no_influential)
+```{r, echo= FALSE, warning = FALSE, include=FALSE}
+# Running a regression with obs 1180 removed
+
+
+mlr.lev <- lm(Life.Expectancy ~ Residential.Segregation.Index * Region_fac +
+    X..Limited.Access.to.Healthy.Foods +
+    X..Uninsured.Adults + Median.Household.Income, data=completed_data_lev)
+
+renamed <- c(
+    "Residential.Segregation.Index" = "Residential Segregation Index (RSI)",
+  "X..Limited.Access.to.Healthy.Foods" = "Percentage With Access to Healthy Foods",
+  "X..Uninsured.Adults"= "Percentage of Uninsured Adults",
+  "Region_facWest"="Region-West", 
+  "Region_facNortheast"="Region-Northeast",
+  "Region_facMidwest"="Region-Midwest" ,
+  "Residential.Segregation.Index:Region_facWest" = "RSI*Region-West",
+  "Residential.Segregation.Index:Region_facNortheast"= "RSI*Region-Northeast",
+  "Residential.Segregation.Index:Region_facMidwest"="RSI*Region-Midwest",
+  "Median Household Income" = "Median.Household.Income")
+
+modelsummary(mlr.lev, fmt = fmt_significant(2),
+             coef_rename = renamed, 
+             shape = term ~ model + statistic,
+             statistic = c("std.error","conf.int","p.value"),
+             exponentiate = FALSE,
+             gof_map=NA,
+             )
+```
+
+```{r, echo=FALSE, include=FALSE}
+plot(mlr.lev)
 ```
 
 ## Question 2
@@ -544,9 +550,9 @@ Future studies could incorporate more social variables to enhance the analysis a
 | Max | 93.8 | 62.6 | 47.1 | 167605 | 9788 | 98.9 |
 | Standard Deviation | 16.5 | 6.9 | 6.6 | 16877.8 | 1274.7 | 3.1 |
 
-```{r}
-library(kableExtra)
-datasummary_skim(completed_data)
+
+```{r, include=FALSE, echo=FALSE}
+summary(completed_data)
 ```
 
 ## **References**
