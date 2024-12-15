@@ -10,9 +10,77 @@ execute:
   warning: false
 ---
 
+```{r}
+library("dplyr") 
+library(mice) 
+library(sjlabelled) 
+library(tidyverse) 
+library("modelsummary") 
+library(car)
+library(GGally)
+library(ggplot2)
+library(patchwork)
+library(caret)
+library(pROC)
+library(pander)
+```
+
+Imputation
+
+```{r}
+combined <- read.csv('https://github.com/wujenny214/F24_STATS_FINAL/raw/refs/heads/main/combined.csv')
+```
+
+```{r, echo= FALSE, warning = FALSE}
+# Making the state_fac variable a factor variable for future use
+combined <- combined |> mutate(State_fac = factor(combined$State), Region_fac = factor(combined$Region, levels=c('South', 'West', 'Northeast', 'Midwest')))
+```
+
+```{r, echo= FALSE, warning = FALSE}
+## Imputation Code 
+# In this block, we are looking to use predictive mean matching to combing regression methods and hot deck imputing to predicted value closest to the predicted value of the observation with missing data; we also needed to convert school funding adequacy imputed values to school funding categorical variable before using in models
+
+sub <- combined |> select(c("Life.Expectancy","Residential.Segregation.Index","X..Limited.Access.to.Healthy.Foods","X..Uninsured.Adults","Median.Household.Income", "School.Funding.Adequacy", "Median.Prop.Tax", "Region_fac"))
+sub <- unlabel(sub) #unlabel the data (labels cause problem for the mice function)
+
+# Add School.Funding.Cat to the orginal dataset. Since we do not want to imputate on the categorical outcome variable,  this creation of a variable exists to create the proper dataframe within the imputated data 
+sub$School.Funding.Cat <- ifelse(sub$School.Funding.Adequacy > 0, 1, 0)  
+
+# Perform the imputation
+sub.imp <- mice(sub, m = 1, method = "pmm", print = FALSE, seed=3)
+```
+
 ### Exploratory Data Analysis & Data Preprocessing
 
-(Rishika will add here)
+```{r}
+plot1 <- ggplot(final_df, aes(x = Residential.Segregation.Index, y = Life.Expectancy)) +
+  geom_point(color='purple') +
+  labs(x = "Residential Segregation", y = "Life Expectancy")+ 
+  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
+axis.title.x = element_text(size = 8),
+axis.title.y = element_text(size = 8))
+
+plot2 <- ggplot(final_df, aes(x = Percent.Limited.Access.Healthy.Foods
+, y = Life.Expectancy)) +
+  geom_point(color = "green") +
+  labs( x = "% Population With Limited Healthy Food Access") +
+  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8))
+
+plot3 <- ggplot(final_df, aes(x = Percent.Uninsured.Adults, y = Life.Expectancy)) +
+  geom_point(color = "blue") +
+  labs(x = "% Adult Population Without Health Insurance", y = "Life Expectancy")+ 
+  theme(plot.margin = margin(t = 20, r = 20, b = 20, l = 20),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8))
+
+plot1 + plot2 + plot3 + plot_layout(ncol = 2, nrow=2) + 
+  plot_annotation(title = "Relationships Between Predictors and 
+                  Life Expectancy Outcome",
+                  theme = theme(
+      plot.title = element_text(hjust=0.5)))
+```
 
 ### Model Fitting & Assessment
 
