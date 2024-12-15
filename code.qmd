@@ -3,7 +3,7 @@ title: "Understanding the Impact of Socioeconomic and Regional Factors on Health
 author: "Rishika Randev, Jenny Wu, Uzoma Uwazurike Jr., Shiyue Zhou"
 instructor: "Andrea Lane"
 institution: "Duke University, IDS 702 Data Modeling and Presentation"
-format: html
+format: pdf
 editor: visual
 execute:
   echo: false
