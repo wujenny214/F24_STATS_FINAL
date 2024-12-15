@@ -545,7 +545,7 @@ skim_table <- datasummary_skim(
 
 ```
 
-![](images/clipboard-599292470.png)
+## ![](images/clipboard-2912764107.png)
 
 ## **References**
 
