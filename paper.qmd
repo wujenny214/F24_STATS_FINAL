@@ -96,7 +96,7 @@ str(completed_data)
 colSums(is.na(completed_data))
 ```
 
-## **Abstract**
+## Abstract
 
 This study examines the relationships between socioeconomic, health, and education indicators in U.S. counties using data from the American Community Survey, the USDA Food Environment Atlas, Small Area Income and Poverty Estimates, and other sources.We analyze how factors such as residential segregation, health insurance coverage, access to healthy foods, and region influence life expectancy, and how residential segregation and region affect school funding adequacy. Our findings reveal that life expectancy is influenced by residential segregation and uninsured rates, though these effects are minor compared to the more substantial influence of household income and regional differences. Life expectancy averages are highest in the Northeast, followed by the Midwest, West, and South. Region also plays the most significant role out of all included variables in determining the likelihood of school funding adequacy, with schools in the Northeast and Midwest being far more likely to receive adequate funding than those in the South. Other factors, such as residential segregation, property taxes, and household income, show statistically significant but smaller effects. These results highlight the complex interplay between socioeconomic variables and geographic location in shaping public well-being. By identifying key disparities in health and education, this study underscores the importance of equitable resource allocation and targeted policies to address regional and socioeconomic inequalities.
 
@@ -525,25 +525,24 @@ Future studies could incorporate additional social variables to enhance the anal
 
 *Table A1: Summary Statistics For All Variables*
 
-![](images/Screenshot 2024-12-15 at 2.38.35 AM.png)
-
 ```{r}
 renamed_data <- completed_data %>%
   rename(
-    "Residential Segregation Index" = Residential.Segregation.Index,
+    "Residential Segregation" = Residential.Segregation.Index,
     "Median Household Income" = Median.Household.Income,
     "Median Property Tax" = Median.Prop.Tax,
     "School Funding Adequacy" = School.Funding.Adequacy, 
-    "Average Life Expectancy" = Life.Expectancy,
-    "% Limited Access to Healthy Foods" = X..Limited.Access.to.Healthy.Foods,
+    "Life Expectancy" = Life.Expectancy,
+    "% Limited Access, Healthy Foods" = X..Limited.Access.to.Healthy.Foods,
     "% Uninsured Adults" = X..Uninsured.Adults,
     "Region" = Region_fac,
     "School Funding Binary" =School.Funding.Cat)
 
-datasummary_skim(
+skim_table <- datasummary_skim(
   renamed_data,
-  title = "Customized Summary Table")
-  
+  title = "Summary Statistics") 
+                
+
 
 
 ```
