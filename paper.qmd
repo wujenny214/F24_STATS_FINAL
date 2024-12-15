@@ -4,6 +4,10 @@ author: "Rishika Randev, Jenny Wu, Uzoma Uwazurike Jr., Shiyue Zhou"
 instructor: "Andrea Lane"
 institution: "Duke University, IDS 702 Data Modeling and Presentation"
 format: pdf
+header-includes:
+      - \usepackage{float}
+      - \floatplacement{table}{H}
+fontsize: 10pt
 editor: visual
 execute:
   echo: false
@@ -143,7 +147,7 @@ For our second research question, a binary logistic regression model was fit wit
 
 ### *Data Overview*
 
-Table 1 displays summary statistics for the predictors in the second model, stratified by school funding adequacy. School funding adequacy counts show that around 66% of the counties in our analysis had under funded schools. Additionally, the number of counties per region indicate an imbalance between categories, with the South region being over represented (holding 60% of all counties), and the East and Northeast holding around 9% of the counties each. Table A1 in the Appendix provides summary statistics for all variables, and shows that both the mean and median for life expectancy are approximately 75 years.
+Table 1 displays summary statistics for the predictors in the second model, stratified by school funding adequacy. School funding adequacy counts show that around 66% of the counties in our analysis had underfunded schools. Additionally, the number of counties per region indicate an imbalance between categories, with the South region being over represented (holding 60% of all counties), and the East and Northeast holding around 9% of the counties each. Table A1 in the Appendix provides summary statistics for all variables, and shows that both the mean and median for life expectancy are approximately 75 years.
 
 ```{r, echo=FALSE, include=FALSE}
 completed_data |> group_by(School.Funding.Cat) |> summarise(mean(Median.Household.Income), sd(Median.Household.Income), mean(Median.Prop.Tax), sd(Median.Prop.Tax), mean(Residential.Segregation.Index), sd(Residential.Segregation.Index))
@@ -172,8 +176,6 @@ table(completed_data$School.Funding.Cat, completed_data$Region_fac)
 Based on the multiple linear regression results, residential segregation, percentage of uninsured adults, region, and median household income all emerged with statistically significant effects on life expectancy. However, the coefficients for most of these variables were small. Specifically, holding all other variables constant, for every 1 unit increase in percentage of uninsured adults, a county's average life expectancy increases by 0.032 years, which is surprising and suggests the effect of confounding variables not included in our study like ???. For every \$10,000 increase in median household income, life expectancy increases by 1.25 years on average. The impact of region on life expectancy was notable: life expectancy is on average 1.96 years higher in the West region compared to the South, 2.92 years higher in the Northeast compared to the South, and 1.92 years higher in the Midwest compared to the South, even when controlling for income, uninsured population, and racial diversity. This suggests that potentially the quality of healthcare and public services, which differ substantially from region to region, could be a big driver in life expectancy even outside of income (how to word / explain this better)???
 
 The percentage of population with limited access to healthy foods predictor was not statistically significant, suggesting that this environmental factor may not have an independent effect on life expectancy outside of an economic factor like income. In terms of residential segregation, for every 1 unit increase in a county's index value (corresponding to increased segregation), its average life expectancy increases by 0.0071 years in the South, increases by 0.0068 years in the West, decreases by 0.0055 years in the Northeast, and decreases by 0.0004 years in the Midwest, as seen in Figure 1. However, these differences are not statistically significant given the high p-values of all residential segregation-region interaction terms. We confirmed this result with a nested f-test, comparing a full model to a reduced model that excluded the interaction term between region and residential segregation. This did not show a statistically significant difference in RSS (*p*=0.624), indicating that the interaction between region and residential segregation does not add meaningful explanatory power to our model, and that we did not find enough evidence to support regional variations in the relationship between segregation and life expectancy (???? is this fine???? or am I saying something incorrect???). Instead, based on residential segregation's coefficient estimate in the model, life expectancy does appear to increase overall with an increase in residential segregation, however minor this increase may be.
-
-\newpage
 
 ```{r, echo=FALSE, warning = FALSE, include=FALSE}
 # MLR
@@ -211,9 +213,28 @@ modelsummary(mlrmodel, fmt = fmt_significant(2),
 
 ```
 
+\newpage
+
+*Figure 1: Segregation & Life Expectancy Across Different U.S. Regions*
+
+```{r, echo=FALSE, fig.pos='H'}
+library(ggplot2)
+library(GGally)
+library(patchwork)
+
+ggplot(completed_data, aes(x = Residential.Segregation.Index, y = Life.Expectancy, color=Region_fac)) +
+  geom_point(color='black') + geom_smooth(method="lm",se=F) + 
+  scale_color_brewer(palette = "Dark2") +
+  labs(x = "Residential Segregation Index", y = "Average Life Expectancy (Years)", color='U.S. Region', title='Relationship Between Residential Segregation and Life Expectancy')+ 
+  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
+axis.title.x = element_text(size = 8),
+axis.title.y = element_text(size = 8),
+title=element_text(size=9))
+```
+
 *Table 2: MLR Results For Average Life Expectancy Outcome*
 
-```{r, echo= FALSE, warning = FALSE}
+```{r, echo= FALSE, warning = FALSE, fig.pos='H'}
 # Running a regression with the imputated data (completed_data) to understand the impact of missing data
 
 mlr.imp <- lm(Life.Expectancy ~ Residential.Segregation.Index * Region_fac +
@@ -272,23 +293,6 @@ modelsummary(mlr.imp.reduced, fmt = fmt_significant(2),
 ```{r, include=FALSE, echo=FALSE}
 ##Nested F-Test to see if segregation-region interaction term makes a difference
 anova(mlr.imp, mlr.imp.reduced)
-```
-
-*Figure 1: Segregation & Life Expectancy Across Different U.S. Regions*
-
-```{r, echo=FALSE}
-library(ggplot2)
-library(GGally)
-library(patchwork)
-
-ggplot(completed_data, aes(x = Residential.Segregation.Index, y = Life.Expectancy, color=Region_fac)) +
-  geom_point(color='black') + geom_smooth(method="lm",se=F) + 
-  scale_color_brewer(palette = "Dark2") +
-  labs(x = "Residential Segregation Index", y = "Average Life Expectancy (Years)", color='U.S. Region', title='Relationship Between Residential Segregation and Life Expectancy')+ 
-  theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
-axis.title.x = element_text(size = 8),
-axis.title.y = element_text(size = 8),
-title=element_text(size=9))
 ```
 
 #### Model Assessment
@@ -414,6 +418,8 @@ modelsummary(imp_mods,
              exponentiate = FALSE,
              gof_map=NA)
 ```
+
+*Table 3: Logistic Regression Results For School Funding Adequacy Outcome*
 
 ```{r, echo=FALSE}
 
