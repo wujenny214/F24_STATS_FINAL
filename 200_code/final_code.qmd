@@ -290,11 +290,11 @@ plot1 + plot2 + plot3 + plot_layout(ncol = 2, nrow=2) +
 ```{r}
 ggplot(completed_data, aes(x=Region_fac, y = Life.Expectancy)) +
   geom_boxplot() +
-  labs(x = "U.S. Region", y='Average Life Expectancy (Yrs)', color='U.S. Region', title='County Average Life Expectancy Distribution, Stratified by Region') +
+  labs(x = "U.S. Region", y='Average Life Expectancy (Years)', color='U.S. Region', title='County Average Life Expectancy Distribution, Stratified by Region') +
   #scale_color_hue(labels = c("Inadequate", "Adequate"))+ 
   theme(plot.margin = margin(t = 20, r = 30, b = 20, l = 10),
-axis.title.x = element_text(size = 8),
-axis.title.y = element_text(size = 8),
+axis.title.x = element_text(size = 9),
+axis.title.y = element_text(size = 9),
 title=element_text(size=9))
 ```
 
